@@ -1,0 +1,1 @@
+/home/aki/src/rust/mincaml-rust/target/debug/libmincaml_rust.rlib: /home/aki/src/rust/mincaml-rust/src/ast.rs /home/aki/src/rust/mincaml-rust/src/id.rs /home/aki/src/rust/mincaml-rust/src/parser.rs /home/aki/src/rust/mincaml-rust/src/typing.rs /home/aki/src/rust/mincaml-rust/src/lib.rs
