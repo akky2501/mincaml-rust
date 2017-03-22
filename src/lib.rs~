@@ -8,3 +8,4 @@ pub mod ast;
 pub mod id;
 pub mod typing;
 pub mod parser;
+pub mod knormal;

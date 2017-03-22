@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use typing::Type;
 
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Id(pub String);
 
 #[derive(Debug)]

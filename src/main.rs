@@ -1,7 +1,11 @@
 
 extern crate mincaml_rust;
+
+use std::collections::HashMap;
+
 use mincaml_rust::parser::parse;
 use mincaml_rust::typing::{infer,TypeSubst,TypeEnv};
+use mincaml_rust::alpha_transform::alpha_transform;
 
 #[allow(unused_variables)]
 fn main() {
@@ -48,10 +52,13 @@ fn main() {
     let (mut ast, mut vg) = parse(src).unwrap();
     println!("ast: {:?}\n",ast);
 
+    alpha_transform(&mut ast, &mut HashMap::new(), &mut vg).unwrap();
+    println!("alpha transformed ast:\n{:?}",ast);
+    
     let mut subst = TypeSubst::new();
     let mut tenv = TypeEnv::new();
     let mut ty = infer(&mut subst, &mut vg, &mut tenv, &mut ast).unwrap();
-    println!("\nsubst: {:?}\nenv: {:?}\ntype: {:?}",subst,tenv,ty);
+    println!("subst: {:?}\nenv: {:?}\ntype: {:?}",subst,tenv,ty);
     println!("typed ast: {:?}",ast);
     ty.apply(&subst);
     println!("result type: {:?}",ty);
