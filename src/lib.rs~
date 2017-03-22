@@ -4,8 +4,6 @@ extern crate nom;
 
 extern crate rand;
 
-mod rand;
-
 pub mod ast;
 pub mod id;
 pub mod typing;

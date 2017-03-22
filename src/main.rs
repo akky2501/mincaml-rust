@@ -3,7 +3,7 @@ extern crate mincaml_rust;
 use mincaml_rust::parser::parse;
 use mincaml_rust::typing::{infer,TypeSubst,TypeEnv};
 
-
+#[allow(unused_variables)]
 fn main() {
     let src = b"
     let (a, b, c) = (
@@ -32,10 +32,18 @@ fn main() {
             in helper
         in
         let main = (sum 0) 10 in
-        main
+        const
                 ";
-    let src = b"let rec f x = x in (f 1, f true)";
-    
+    let src2 = b"let rec f x = x in (f 1, f true)";
+    let src3 = b"let y = (let rec f x = x+1 in f)
+                in y";
+    let src = b"
+        let rec S x y z = x z (y z) in
+        let rec K x y   = x         in
+        let rec I x     = x         in
+        (S, K, I)
+    ";
+
 
     let (mut ast, mut vg) = parse(src).unwrap();
     println!("ast: {:?}\n",ast);
@@ -48,6 +56,5 @@ fn main() {
     ty.apply(&subst);
     println!("result type: {:?}",ty);
 
-    //mincaml_rust::typing::test();
 }
 
