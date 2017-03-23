@@ -110,10 +110,10 @@ impl Parser {
     ));
 
     method!(elems<Parser,Syntax>, mut self, do_parse!(
-        head: call_m!(self.logic_exp) >> 
+        head: call_m!(self.logic_or_exp) >> 
         tuple:fold_many0!(complete!(do_parse!(
             opt!(multispace) >> tag_c!(",") >> opt!(multispace) >> 
-            e:call_m!(self.logic_exp) >>
+            e:call_m!(self.logic_or_exp) >>
             (e)
         )), vec![head], |mut acc:Vec<_>, item| {acc.push(item); acc}) >>
         
@@ -129,22 +129,31 @@ impl Parser {
         })
     ));
 
-    method!(logic_exp<Parser,Syntax>, mut self, do_parse!(
+    method!(logic_or_exp<Parser,Syntax>, mut self, do_parse!(
+        head: call_m!(self.logic_and_exp) >>
+        expr: fold_many0!(complete!(do_parse!(
+                opt!(multispace) >> tag_c!("||") >> opt!(multispace) >>
+                e:call_m!(self.logic_and_exp) >>
+                (e)
+        )), head, |acc:Syntax, item| {
+            Syntax::If(Box::new(acc),
+                Box::new(Syntax::Bool(true)),
+                Box::new(Syntax::If(Box::new(item), Box::new(Syntax::Bool(true)), Box::new(Syntax::Bool(false)))))
+        }) >>
+        
+        (expr)
+    ));
+
+    method!(logic_and_exp<Parser,Syntax>, mut self, do_parse!(
         head: call_m!(self.comp_exp) >>
         expr: fold_many0!(complete!(do_parse!(
-                opt!(multispace) >> op:alt!(tag_c!("&&") | tag_c!("||")) >> opt!(multispace) >>
+                opt!(multispace) >> tag_c!("&&") >> opt!(multispace) >>
                 e:call_m!(self.comp_exp) >>
-                ((op,e))
-        )), head, |acc:Syntax, (op,item)| {
-            match str::from_utf8(op).unwrap() {
-                "&&" => Syntax::If(Box::new(acc),
-                                   Box::new(Syntax::If(Box::new(item), Box::new(Syntax::Bool(true)), Box::new(Syntax::Bool(false)))),
-                                   Box::new(Syntax::Bool(false))),
-                "||" => Syntax::If(Box::new(acc),
-                                   Box::new(Syntax::Bool(true)),
-                                   Box::new(Syntax::If(Box::new(item), Box::new(Syntax::Bool(true)), Box::new(Syntax::Bool(false))))),
-                _ => panic!(),
-            }
+                (e)
+        )), head, |acc:Syntax, item| {
+            Syntax::If(Box::new(acc),
+            Box::new(Syntax::If(Box::new(item), Box::new(Syntax::Bool(true)), Box::new(Syntax::Bool(false)))),
+            Box::new(Syntax::Bool(false)))
         }) >>
         
         (expr)

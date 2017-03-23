@@ -20,7 +20,7 @@ impl VarGenerater {
 
     pub fn gen_id(&mut self) -> Id {
         let mut out = String::new();
-        write!(&mut out, "@newid{}",self.gen_count()).unwrap();
+        write!(&mut out, "@{}",self.gen_count()).unwrap();
         Id(out)
     }
 

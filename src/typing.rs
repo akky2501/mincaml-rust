@@ -93,7 +93,7 @@ impl Type {
         }
     }
 
-    fn generalize(&self, env: &TypeEnv) -> TypeScheme {
+    pub fn generalize(&self, env: &TypeEnv) -> TypeScheme {
         let tfv = self.free_variables();
         let efv = env.free_variables();
         let bind: HashSet<_> = tfv.difference(&efv).cloned().collect();
@@ -233,8 +233,8 @@ fn unify(mut c: Vec<(Type, Type)>) -> Result<TypeSubst, ()> {
             },
             (Type::Tuple(elems1), Type::Tuple(elems2)) => {
                 if elems1.len() == elems2.len() {
-                    let mut t: Vec<_> = elems1.to_vec().into_iter()
-                                          .zip(elems2.to_vec().into_iter()).collect();
+                    let mut t: Vec<_> = elems1.into_iter()
+                                          .zip(elems2.into_iter()).collect();
                     c.append(&mut t);
                     unify(c)
                 }
@@ -276,7 +276,7 @@ pub fn infer(expr: &mut Syntax, env: &mut TypeEnv, gsubst: &mut TypeSubst, vg: &
             ty
         }};
     }
-
+    
     match *expr {
         Syntax::Unit    => Ok(Type::Unit),
         Syntax::Bool(_) => Ok(Type::Bool),
