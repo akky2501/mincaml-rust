@@ -10,3 +10,4 @@ pub mod typing;
 pub mod parser;
 pub mod knormal;
 pub mod alpha;
+pub mod closure;
