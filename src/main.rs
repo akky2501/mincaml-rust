@@ -7,7 +7,7 @@ use std::collections::HashSet;
 
 use mincaml_rust::parser::parse;
 use mincaml_rust::typing::{infer,TypeSubst,TypeEnv};
-use mincaml_rust::alpha_transform::alpha_transform;
+use mincaml_rust::alpha::alpha_transform;
 use mincaml_rust::knormal::knormal_transform;
 
 #[allow(unused_variables)]

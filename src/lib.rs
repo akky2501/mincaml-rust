@@ -9,4 +9,4 @@ pub mod id;
 pub mod typing;
 pub mod parser;
 pub mod knormal;
-pub mod alpha_transform;
+pub mod alpha;
