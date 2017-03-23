@@ -1,6 +1,7 @@
 
 extern crate mincaml_rust;
 
+use std::str;
 use std::collections::HashMap;
 
 use mincaml_rust::parser::parse;
@@ -35,33 +36,41 @@ fn main() {
                 in loop min 
             in helper
         in
-        let main = (sum 0) 10 in
-        const
+        let main = (sum 0)  in
+        main
                 ";
     let src2 = b"let rec f x = x in (f 1, f true)";
     let src3 = b"let y = (let rec f x = x+1 in f)
                 in y";
-    let src = b"
+    let src4 = b"
         let rec S x y z = x z (y z) in
         let rec K x y   = x         in
         let rec I x     = x         in
         (S, K, I)
     ";
 
+    println!("src:\n{}",str::from_utf8(src).unwrap());
 
+    println!("parse phase... begin");
     let (mut ast, mut vg) = parse(src).unwrap();
-    println!("ast: {:?}\n",ast);
+    println!("ast:\n{:?}\n",ast);
+    println!("parse phase... end\n");
 
+    println!("alpha transform phase... begin");
     alpha_transform(&mut ast, &mut HashMap::new(), &mut vg).unwrap();
     println!("alpha transformed ast:\n{:?}",ast);
+    println!("alpha transform phase... end\n");
     
+    println!("typing phase... begin");
     let mut subst = TypeSubst::new();
-    let mut tenv = TypeEnv::new();
-    let mut ty = infer(&mut subst, &mut vg, &mut tenv, &mut ast).unwrap();
-    println!("subst: {:?}\nenv: {:?}\ntype: {:?}",subst,tenv,ty);
-    println!("typed ast: {:?}",ast);
+    let mut env = TypeEnv::new();
+    let mut ty = infer(&mut ast, &mut env, &mut subst, &mut vg).unwrap();
+    println!("type: {:?}",ty);
+    println!("env:\n{:?}",env);
+    println!("subst:\n{:?}",subst);
+    println!("typed ast:\n{:?}",ast);
     ty.apply(&subst);
-    println!("result type: {:?}",ty);
-
+    println!("substituted type: {:?}",ty);
+    println!("typing phase... end\n");
 }
 

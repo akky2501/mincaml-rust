@@ -249,7 +249,7 @@ fn unify(mut c: Vec<(Type, Type)>) -> Result<TypeSubst, ()> {
 }
 
 // Algorithm J
-pub fn infer(gsubst: &mut TypeSubst, vg: &mut VarGenerater, env: &mut TypeEnv, expr: &mut Syntax) -> Result<Type, ()> {
+pub fn infer(expr: &mut Syntax, env: &mut TypeEnv, gsubst: &mut TypeSubst, vg: &mut VarGenerater) -> Result<Type, ()> {
     macro_rules! unify{
         ($e1:expr, $e2:expr) => {{
             let mut v = vec![($e1, $e2)];
@@ -264,7 +264,7 @@ pub fn infer(gsubst: &mut TypeSubst, vg: &mut VarGenerater, env: &mut TypeEnv, e
 
     macro_rules! infer{
         ($expr:expr) => {{
-            infer(gsubst, vg, env, $expr)?
+            infer($expr, env, gsubst, vg)?
         }};
 
         ($id:ident : $ex:expr , $expr:expr) => {{
