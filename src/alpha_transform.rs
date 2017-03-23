@@ -38,6 +38,23 @@ pub fn alpha_transform(expr: &mut Syntax, env: &mut HashMap<Id,Id>, vg: &mut Var
             else { Err(()) }
         },
         Syntax::LetRec(FunDef{ name: (ref mut name, _), ref mut args, ref mut body}, ref mut t) => {
+
+            {
+                for &(ref s,_) in args.iter() {
+                    if *name == *s {
+                        return Err(())
+                    }
+                }
+
+                for i in 0..args.len() {
+                    for j in (i+1)..args.len() {
+                        if args[i].0 == args[j].0 {
+                            return Err(())
+                        }
+                    }
+                }
+            }
+
             let new = vg.gen_id();
             env.insert(name.clone(), new.clone());
 
@@ -74,6 +91,16 @@ pub fn alpha_transform(expr: &mut Syntax, env: &mut HashMap<Id,Id>, vg: &mut Var
             Ok(())
         },
         Syntax::LetTuple(ref mut decl, ref mut t1, ref mut t2) => {
+            {
+                for i in 0..decl.len() {
+                    for j in (i+1)..decl.len() {
+                        if decl[i].0 == decl[j].0 {
+                            return Err(())
+                        }
+                    }
+                }
+            }
+            
             alpha_transform(t1, env, vg)?;
 
             let new: Vec<_> = decl.to_vec().iter().map(|_| vg.gen_id()).collect();
