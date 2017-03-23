@@ -288,7 +288,9 @@ impl Parser {
     ));
    
     method!(ident<Parser,Id>, mut self, do_parse!(
-        not!(call_m!(self.reserved)) >>
+        not!(
+            do_parse!(r:call_m!(self.reserved) >> not!(alt!(tag_c!("_")|alphanumeric)) >> (r))
+        ) >>
         head: alt!(tag_c!("_")|alpha) >>
         string: fold_many0!(complete!(alt!(tag_c!("_") | alphanumeric)),
                             str::from_utf8(head).unwrap().to_string(),
