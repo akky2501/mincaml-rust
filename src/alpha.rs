@@ -39,7 +39,7 @@ pub fn alpha_transform(expr: &mut Syntax, env: &mut HashMap<Id,Id>, vg: &mut Var
         },
         Syntax::LetRec(FunDef{ name: (ref mut name, _), ref mut args, ref mut body}, ref mut t) => {
 
-            {
+            /*{ // 仮引数の名前重複チェック,MLはしないっぽい
                 for &(ref s,_) in args.iter() {
                     if *name == *s {
                         return Err(())
@@ -53,7 +53,7 @@ pub fn alpha_transform(expr: &mut Syntax, env: &mut HashMap<Id,Id>, vg: &mut Var
                         }
                     }
                 }
-            }
+            }*/
 
             let new = vg.gen_id();
             env.insert(name.clone(), new.clone());
@@ -65,13 +65,14 @@ pub fn alpha_transform(expr: &mut Syntax, env: &mut HashMap<Id,Id>, vg: &mut Var
             }
 
             alpha_transform(body, env, vg)?;
-            alpha_transform(t, env, vg)?;
 
             for i in 0..new_args.len() {
                 env.remove(&new_args[i]);
                 args[i].0 = new_args[i].clone();
             }
 
+            env.insert(name.clone(), new.clone());
+            alpha_transform(t, env, vg)?;
             env.remove(name);
             *name = new;
 

@@ -51,23 +51,26 @@ fn main() {
         (S, K, I)
     ";
 
-    let src5 = b"
-        1+(let x = (let y = 5+3 in y+y) in x+7)
+    let src = b"
+        let rec id x = x in
+        let a = 1+(let x = (let y = 5+3 in y+y) in x+7) in
+        id a
         ";
+    let src = b"let rec f x = f in f";
 
     println!("src:\n{}",str::from_utf8(src).unwrap());
 
-    println!("parse phase... begin");
+    println!("[[parse phase... begin]]");
     let (mut ast, mut vg) = parse(src).unwrap();
     println!("ast:\n{:?}\n",ast);
-    println!("parse phase... end\n");
+    println!("[[parse phase... end]]\n");
 
-    println!("alpha transform phase... begin");
+    println!("[[alpha transform phase... begin]]");
     alpha_transform(&mut ast, &mut HashMap::new(), &mut vg).unwrap();
     println!("alpha transformed ast:\n{:?}",ast);
-    println!("alpha transform phase... end\n");
+    println!("[[alpha transform phase... end]]\n");
     
-    println!("typing phase... begin");
+    println!("[[typing phase... begin]]");
     let mut subst = TypeSubst::new();
     let mut env = TypeEnv::new();
     let mut ty = infer(&mut ast, &mut env, &mut subst, &mut vg).unwrap();
@@ -86,18 +89,18 @@ fn main() {
         println!("type scheme: {:?}",rty);
         return ();
     }*/
-    println!("typing phase... end\n");
+    println!("[[typing phase... end]]\n");
 
-    println!("knormal transform phase... begin");
+    println!("[[knormal transform phase... begin]]");
     let (mut k, ty) = knormal_transform(ast, &mut HashMap::new(), &mut vg);
     println!("k-normal form:\n{:?}",k);
     println!("k-normal form type:\n{:?}",ty);
     k = flat_let(k);
     println!("flatted k-normal form:\n{:?}",k);
-    println!("knormal transform phase... end\n");
+    println!("[[knormal transform phase... end]]\n");
     
-    println!("closure transform phase... begin");
-    println!("closure transform phase... end\n");
+    println!("[[closure transform phase... begin]]");
+    println!("[[closure transform phase... end]]\n");
 }
 
 /*
