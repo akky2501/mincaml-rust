@@ -263,4 +263,56 @@ pub fn knormal_transform(ast: Ast, env: &mut HashMap<Id, Type>, vg: &mut VarGene
     }
 }
 
+pub fn flat_let(k: Syntax) -> Syntax {
+    use self::Syntax::*;
+    match k {
+        k@Unit      |
+        k@Bool(_)   |
+        k@Int(_)    |
+        k@Neg(_)    |
+        k@Add(_, _) |
+        k@Sub(_, _) |
+        k@Mul(_, _) |
+        k@Div(_, _) |
+        k@Var(_)    |
+        k@App(_, _) |
+        k@Tuple(_)  => k,
+        IfEq(a, b, t, f) => {
+            let t = flat_let(*t);
+            let f = flat_let(*f);
+            IfEq(a, b, Box::new(t), Box::new(f))
+        },
+        IfLE(a, b, t, f) => {
+            let t = flat_let(*t);
+            let f = flat_let(*f);
+            IfLE(a, b, Box::new(t), Box::new(f))
+        },
+        Let(var, v, e) => {
+            let v = *v;
+            match v {
+                Let(var2, v2, e2) => {
+                    let v2 = flat_let(*v2);
+                    let e = flat_let(*e);
+                    let e2 = flat_let(*e2);
+                    flat_let(Let(var2, Box::new(v2), Box::new(Let(var, Box::new(e2), Box::new(e)))))
+                },
+                v@_ => {
+                    let v = flat_let(v);
+                    let e = flat_let(*e);
+                    Let(var, Box::new(v), Box::new(e))
+                },
+            }
+        },
+        LetRec(mut f, e) => {
+            f.body = Box::new(flat_let(*f.body));
+            let e = flat_let(*e);
+            LetRec(f, Box::new(e))
+        },
+        LetTuple(a, b, e) => {
+            let e = flat_let(*e);
+            LetTuple(a, b, Box::new(e))
+        },
+    }
+}
+
 
