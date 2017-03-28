@@ -17,7 +17,7 @@ pub enum Syntax {
     Div(Id, Id),
     IfEq(Id, Id, Box<Syntax>, Box<Syntax>),
     IfLE(Id, Id, Box<Syntax>, Box<Syntax>),
-    Let((Id,Type), Box<Syntax>, Box<Syntax>),
+    Let((Id, Type), Box<Syntax>, Box<Syntax>),
     Var(Id),
     LetRec(FunDef, Box<Syntax>),
     App(Id, Vec<Id>),
@@ -27,9 +27,9 @@ pub enum Syntax {
 
 #[derive(Debug)]
 pub struct FunDef{
-    name: (Id, Type),
-    args: Vec<(Id, Type)>,
-    body: Box<Syntax>,
+    pub name: (Id, Type),
+    pub args: Vec<(Id, Type)>,
+    pub body: Box<Syntax>,
 }
 
 macro_rules! insert_let {

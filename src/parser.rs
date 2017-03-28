@@ -94,10 +94,12 @@ impl Parser {
                 let mut x = tail.pop().unwrap();
                 while ! tail.is_empty() {
                     if let Some(w) = tail.pop() { // セミコロン式で繋げられるのはUnit型の式のみ,Type::UnitをVarにすれば任意に繋げられると思う
-                        x = Syntax::Let((self.vg.gen_id(),Type::Unit), Box::new(w), Box::new(x));
+                        //x = Syntax::Let((self.vg.gen_id(),Type::Unit), Box::new(w), Box::new(x));
+                        x = Syntax::Let((self.vg.gen_id(), self.vg.gen_type()), Box::new(w), Box::new(x));
                     }
                 }
-                Syntax::Let((self.vg.gen_id(),Type::Unit), Box::new(head), Box::new(x))
+                //Syntax::Let((self.vg.gen_id(),Type::Unit), Box::new(head), Box::new(x))
+                Syntax::Let((self.vg.gen_id(),self.vg.gen_type()), Box::new(head), Box::new(x))
             }
         })
     ));

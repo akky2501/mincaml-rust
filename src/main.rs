@@ -8,10 +8,11 @@ use mincaml_rust::parser::parse;
 use mincaml_rust::typing::{infer,TypeSubst,TypeEnv};
 use mincaml_rust::alpha::alpha_transform;
 use mincaml_rust::knormal::{knormal_transform, flat_let};
+use mincaml_rust::closure::closure_transform;
 
 #[allow(unused_variables)]
 fn main() {
-    let src = b"
+    let src0 = b"
     let (a, b, c) = (
         let rec id a = a in
         let x = 10 in
@@ -51,12 +52,16 @@ fn main() {
         (S, K, I)
     ";
 
-    let src = b"
+    let src5 = b"
         let rec id x = x in
         let a = 1+(let x = (let y = 5+3 in y+y) in x+7) in
         id a
         ";
-    let src = b"let rec f x = f in f";
+    let src6 = b"
+                let rec add x =
+                    let rec addx y = x + y in addx in
+                (add 10) 7 
+    ";
 
     println!("src:\n{}",str::from_utf8(src).unwrap());
 
@@ -100,61 +105,134 @@ fn main() {
     println!("[[knormal transform phase... end]]\n");
     
     println!("[[closure transform phase... begin]]");
+    let p = closure_transform(k);
+    println!("program:\n{:?}", p);
     println!("[[closure transform phase... end]]\n");
 }
 
+
 /*
-LetRec(
-    FunDef { 
-        name: (Id("@4"), Fun([Var(3)], Fun([Var(8)], Var(3)))), 
-        args: [(Id("@5"), Var(3))], 
-        body: LetRec(
-            FunDef { 
-                name: (Id("@6"), Fun([Var(1)], Var(3))), 
-                args: [(Id("@7"), Var(1))], 
-                body: Var(Id("@5")) }, 
-            Var(Id("@6"))) }, 
-    Let(
-        (Id("@12"), Int), Int(10), 
-        App(Id("@4"), [Id("@12")])))
+
+Program { 
+    decls: [
+        Function { entry: (Label("@17"), Fun([Var(1)], Var(1))), free_variables: {}, 
+            args: [(Id("@18"), Var(1))], 
+            body: Var(Id("@18")) }, 
+
+        Function { entry: (Label("@21"), Fun([Var(3)], Var(34))), free_variables: {Id("@17"): Fun([Var(1)], Var(1)), Id("@20"): Var(34)}, 
+            args: [(Id("@22"), Var(3))], 
+            body: AppClosure(Id("@17"), [Id("@20")]) },
+
+        Function { entry: (Label("@19"), Fun([Var(34)], Fun([Var(36)], Var(34)))), free_variables: {Id("@17"): Fun([Var(1)], Var(1))}, 
+            args: [(Id("@20"), Var(34))], 
+            body: MakeClosure(Id("@21"), Closure { entry: Label("@21"), free_variables: {Id("@17"), Id("@20")} }, 
+                  Var(Id("@21"))) }, 
+
+        Function { entry: (Label("@23"), Fun([Int], Int)), free_variables: {}, 
+            args: [(Id("@24"), Int)], 
+            body: Let((Id("@48"), Int), Int(1), 
+                  Add(Id("@24"), Id("@48"))) }, 
+
+        Function { entry: (Label("@25"), Fun([Int], Int)), free_variables: {Id("@23"): Fun([Int], Int), Id("@25"): Fun([Int], Int)}, 
+            args: [(Id("@26"), Int)], 
+            body: Let((Id("@51"), Int), AppClosure(Id("@23"), [Id("@26")]), 
+                  Let((Id("@53"), Int), AppClosure(Id("@25"), [Id("@51")]), 
+                  AppClosure(Id("@23"), [Id("@53")]))) }, 
+
+        Function { entry: (Label("@31"), Fun([Int], Int)), free_variables: {Id("@30"): Int, Id("@31"): Fun([Int], Int), Id("@23"): Fun([Int], Int)}, 
+            args: [(Id("@32"), Int)], 
+            body: IfEq(Id("@32"), Id("@30"), 
+                  Var(Id("@32")), 
+                  Let((Id("@59"), Int), AppClosure(Id("@23"), [Id("@32")]), 
+                  Let((Id("@62"), Int), AppClosure(Id("@31"), [Id("@59")]), 
+                  Add(Id("@32"), Id("@62"))))) }, 
+
+        Function { entry: (Label("@29"), Fun([Int], Int)), free_variables: {Id("@23"): Fun([Int], Int), Id("@28"): Int}, 
+            args: [(Id("@30"), Int)], 
+            body: MakeClosure(Id("@31"), Closure { entry: Label("@31"), free_variables: {Id("@31"), Id("@23"), Id("@30")} }, 
+                  AppClosure(Id("@31"), [Id("@28")])) }, 
+
+        Function { entry: (Label("@27"), Fun([Int], Fun([Int], Int))), free_variables: {Id("@23"): Fun([Int], Int)}, 
+            args: [(Id("@28"), Int)], 
+            body: MakeClosure(Id("@29"), Closure { entry: Label("@29"), free_variables: {Id("@23"), Id("@28")} }, 
+                  Var(Id("@29"))) }], 
+    
+    code: MakeClosure(Id("@17"), Closure { entry: Label("@17"), free_variables: {} }, 
+          MakeClosure(Id("@19"), Closure { entry: Label("@19"), free_variables: {Id("@17")} }, 
+          MakeClosure(Id("@23"), Closure { entry: Label("@23"), free_variables: {} }, 
+          MakeClosure(Id("@25"), Closure { entry: Label("@25"), free_variables: {Id("@25"), Id("@23")} }, 
+          MakeClosure(Id("@27"), Closure { entry: Label("@27"), free_variables: {Id("@23")} }, 
+          Let((Id("@65"), Int), Int(10), 
+          Let((Id("@66"), Int), Int(0),
+          Let((Id("@68"), Fun([Int], Int)), AppClosure(Id("@27"), [Id("@66")]), 
+          Let((Id("@33"), Int), AppClosure(Id("@68"), [Id("@65")]), 
+          Var(Id("@33"))))))))))) }
+
 */
 
 /*
-Let(
-    (Id("a"), Int), 
-    Int(1), 
-    Let(
-        (Id("b"), Int), 
-        Let(
-            (Id("x"), Int), 
-            Let(
-                (Id("y"), Int), 
-                Let(
-                    (Id("c"), Int), 
-                    Int(5), 
-                    Let(
-                        (Id("d"), Int), 
-                        Int(3), 
-                        Add(Id("c"), Id("d")))), 
-                Add(Id("y"), Id("y"))), 
-            Let(
-                (Id("e"), Int), 
-                Int(7), 
-                Add(Id("x"), Id("e")))), 
-        Add(Id("a"), Id("b"))))
+Program { 
+    decls: [
+        Function { entry: (Label("@17"), Fun([Var(1)], Var(1))), 
+            free_variables: {}, 
+            args: [(Id("@18"), Var(1))], 
+            body: Var(Id("@18")) }, 
+
+        Function { entry: (Label("@21"), Fun([Var(3)], Var(34))), 
+            free_variables: {Id("@17"): Fun([Var(1)], Var(1)), Id("@20"): Var(34)}, 
+            args: [(Id("@22"), Var(3))], 
+            body: AppClosure(Id("@17"), [Id("@20")]) }, 
+
+        Function { entry: (Label("@19"), Fun([Var(34)], Fun([Var(36)], Var(34)))), 
+            free_variables: {Id("@17"): Fun([Var(1)], Var(1))}, 
+            args: [(Id("@20"), Var(34))], 
+            body: MakeClosure(Id("@21"), Closure { entry: Label("@21"), free_variables: {Id("@17"), Id("@20")} }, 
+                  Var(Id("@21"))) },
+
+        Function { entry: (Label("@23"), Fun([Int], Int)), 
+            free_variables: {}, 
+            args: [(Id("@24"), Int)], 
+            body: Let((Id("@48"), Int), Int(1), 
+                  Add(Id("@24"), Id("@48"))) }, 
+
+        Function { entry: (Label("@25"), Fun([Int], Int)), 
+            free_variables: {Id("@23"): Fun([Int], Int)}, 
+            args: [(Id("@26"), Int)], 
+            body: Let((Id("@51"), Int), AppClosure(Id("@23"), [Id("@26")]), 
+                  Let((Id("@53"), Int), AppClosure(Id("@25"), [Id("@51")]), 
+                  AppClosure(Id("@23"), [Id("@53")]))) },
+
+        Function { entry: (Label("@31"), Fun([Int], Int)), 
+            free_variables: {Id("@30"): Int, Id("@23"): Fun([Int], Int)}, 
+            args: [(Id("@32"), Int)], 
+            body: IfEq(Id("@32"), Id("@30"), 
+                       Var(Id("@32")), 
+                       Let((Id("@59"), Int), AppClosure(Id("@23"), [Id("@32")]), 
+                       Let((Id("@62"), Int), AppClosure(Id("@31"), [Id("@59")]), 
+                       Add(Id("@32"), Id("@62"))))) }, 
+
+        Function { entry: (Label("@29"), Fun([Int], Int)), 
+            free_variables: {Id("@28"): Int, Id("@23"): Fun([Int], Int)}, 
+            args: [(Id("@30"), Int)], 
+            body: MakeClosure(Id("@31"), Closure { entry: Label("@31"), free_variables: {Id("@30"), Id("@23")} }, 
+                  AppClosure(Id("@31"), [Id("@28")])) }, 
+
+        Function { entry: (Label("@27"), Fun([Int], Fun([Int], Int))), 
+            free_variables: {Id("@23"): Fun([Int], Int)}, 
+            args: [(Id("@28"), Int)], 
+            body: MakeClosure(Id("@29"), Closure { entry: Label("@29"), free_variables: {Id("@28"), Id("@23")} }, 
+                  Var(Id("@29"))) }], 
+
+    code: 
+        MakeClosure(Id("@17"), Closure { entry: Label("@17"), free_variables: {} }, 
+        MakeClosure(Id("@19"), Closure { entry: Label("@19"), free_variables: {Id("@17")} }, 
+        MakeClosure(Id("@23"), Closure { entry: Label("@23"), free_variables: {} }, 
+        MakeClosure(Id("@25"), Closure { entry: Label("@25"), free_variables: {Id("@23")} }, 
+        MakeClosure(Id("@27"), Closure { entry: Label("@27"), free_variables: {Id("@23")} }, 
+        Let((Id("@65"), Int), Int(10), 
+        Let((Id("@66"), Int), Int(0), 
+        Let((Id("@68"), Fun([Int], Int)), AppClosure(Id("@27"), [Id("@66")]), 
+        Let((Id("@33"), Int), AppClosure(Id("@68"), [Id("@65")]), 
+        Var(Id("@33"))))))))))) 
+}
 */
-
-/*
-1+(let x = (let y = 5+3 in y+y) in x+7)
-->
-Let((Id("@10"), Int), Int(1), 
-Let((Id("@4"), Int), Int(5), 
-Let((Id("@5"), Int), Int(3), 
-Let((Id("@2"), Int), Add(Id("@4"), Id("@5")), 
-Let((Id("@3"), Int), Add(Id("@2"), Id("@2")), 
-Let((Id("@9"), Int), Int(7), 
-Let((Id("@11"), Int), Add(Id("@3"), Id("@9")), 
-Add(Id("@10"), Id("@11")))))))))
-*/
-
-

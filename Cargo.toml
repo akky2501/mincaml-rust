@@ -5,4 +5,5 @@ authors = ["aki"]
 
 [dependencies]
 nom = "^2.1"
+lazy_static = "0.2.5"
 rand = "0.3"
