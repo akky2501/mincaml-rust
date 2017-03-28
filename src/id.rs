@@ -5,7 +5,7 @@ use typing::Type;
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct Id(pub String);
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
 pub struct Label(pub String);
 
 #[derive(Debug)]

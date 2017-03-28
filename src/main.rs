@@ -57,10 +57,12 @@ fn main() {
         let a = 1+(let x = (let y = 5+3 in y+y) in x+7) in
         id a
         ";
-    let src6 = b"
+    let src = b"
                 let rec add x =
                     let rec addx y = x + y in addx in
-                (add 10) 7 
+                let rec inc x = 1+x in
+                let g = if true then add 10 else inc in
+                g 50
     ";
 
     println!("src:\n{}",str::from_utf8(src).unwrap());
@@ -234,5 +236,66 @@ Program {
         Let((Id("@68"), Fun([Int], Int)), AppClosure(Id("@27"), [Id("@66")]), 
         Let((Id("@33"), Int), AppClosure(Id("@68"), [Id("@65")]), 
         Var(Id("@33"))))))))))) 
+}
+*/
+
+/*
+Program { 
+    decls: [
+        Function { entry: (Label("addx"), Fun([Int], Int)), free_variables: {Id("x"): Int}, 
+            args: [(Id("y"), Int)], 
+            body: Add(Id("x"), Id("y")) }, 
+        
+        Function { entry: (Label("add"), Fun([Int], Fun([Int], Int))), free_variables: {}, 
+            args: [(Id("x"), Int)], 
+            body: MakeClosure(Id("addx"), Closure { entry: Label("addx"), free_variables: {Id("x")} }, 
+                  Var(Id("addx"))) }, 
+        
+        Function { entry: (Label("inc"), Fun([Int], Int)), free_variables: {}, 
+            args: [(Id("x"), Int)], 
+            body: Let((Id("@18"), Int), Int(1), 
+                  Add(Id("@18"), Id("x"))) }], 
+    
+    code: 
+        MakeClosure(Id("add"), Closure { entry: Label("add"), free_variables: {} }, 
+        MakeClosure(Id("inc"), Closure { entry: Label("inc"), free_variables: {} }, 
+        Let((Id("@20"), Bool), Bool(true), 
+        Let((Id("@21"), Bool), Bool(false), 
+        Let((Id("g"), Fun([Int], Int)), IfEq(Id("@20"), Id("@21"), 
+                                               Var(Id("inc")), 
+                                               Let((Id("@22"), Int), Int(10), 
+                                                   AppClosure(Id("add"), [Id("@22")]))), 
+        Let((Id("@24"), Int), Int(50), 
+        AppClosure(Id("g"), [Id("@24")]))))))) 
+}
+*/
+
+/*
+Program { 
+    decls: [
+        Function { entry: (Label("@9"), Fun([Int], Int)), free_variables: {Id("@8"): Int}, 
+            args: [(Id("@10"), Int)], 
+            body: Add(Id("@8"), Id("@10")) }, 
+
+        Function { entry: (Label("@7"), Fun([Int], Fun([Int], Int))), free_variables: {}, 
+            args: [(Id("@8"), Int)], 
+            body: MakeClosure(Id("@9"), Closure { entry: Label("@9"), free_variables: {Id("@8")} }, 
+                  Var(Id("@9"))) }, 
+
+        Function { entry: (Label("@11"), Fun([Int], Int)), free_variables: {}, 
+            args: [(Id("@12"), Int)], 
+            body: Let((Id("@18"), Int), Int(1), 
+                  Add(Id("@18"), Id("@12"))) }], 
+
+    code: MakeClosure(Id("@7"), Closure { entry: Label("@7"), free_variables: {} }, 
+          MakeClosure(Id("@11"), Closure { entry: Label("@11"), free_variables: {} }, 
+          Let((Id("@20"), Bool), Bool(true), 
+          Let((Id("@21"), Bool), Bool(false), 
+          Let((Id("@13"), Fun([Int], Int)), IfEq(Id("@20"), Id("@21"), 
+                                                 Var(Id("@11")), 
+                                                 Let((Id("@22"), Int), Int(10), 
+                                                     AppDirect(Label("@7"), [Id("@22")]))), 
+          Let((Id("@24"), Int), Int(50), 
+          AppClosure(Id("@13"), [Id("@24")]))))))) 
 }
 */

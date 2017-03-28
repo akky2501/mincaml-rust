@@ -22,7 +22,7 @@ pub enum Syntax {
     Var(Id),
     MakeClosure(Id, Closure, Box<Syntax>), // let rec f x = e1(expression containing free variables) in e2
     AppClosure(Id, Vec<Id>),
-    //AppDirect(Label, Vec<Id>),
+    AppDirect(Label, Vec<Id>),
     Tuple(Vec<Id>),
     LetTuple(Vec<(Id, Type)>, Id, Box<Syntax>),
 }
@@ -82,7 +82,11 @@ impl Syntax {
                         s.insert(i.clone());
                     }
                 },
-                //AppDirect(Label, Vec<Id>),
+                AppDirect(_, ref args) => {
+                    for i in args.iter() {
+                        s.insert(i.clone());
+                    }
+                },
                 Tuple(ref el) => {
                     for i in el.iter() {
                         s.insert(i.clone());
@@ -115,11 +119,12 @@ pub struct Program {
 pub fn closure_transform(exp: KN /*, env*/) -> Program {
     let mut env = HashMap::new();
     let mut decls = Vec::new();
-    let code = transform(exp, &mut env, &mut decls);
+    let mut known = HashSet::new();
+    let code = transform(exp, &mut env, &mut decls, &mut known);
     Program { decls: decls, code: code }
 }
 
-
+/*
 fn transform(exp: KN, env: &mut HashMap<Id,Type>, decls: &mut Vec<Function>) -> Syntax {
     use self::Syntax::*;
     match exp {
@@ -195,5 +200,93 @@ fn transform(exp: KN, env: &mut HashMap<Id,Type>, decls: &mut Vec<Function>) -> 
         },
     }
 }
+*/
+
+
+// a little clever version
+fn transform(exp: KN, env: &mut HashMap<Id,Type>, decls: &mut Vec<Function>, known: &mut HashSet<Label>) -> Syntax {
+    use self::Syntax::*;
+    macro_rules! trans {
+        ($e:expr) => { transform($e, env, decls, known) };
+    }
+
+    match exp {
+        KN::Unit => Unit,
+        KN::Bool(b) => Bool(b),
+        KN::Int(i)  => Int(i),
+        KN::Neg(i)  => Neg(i),
+        KN::Add(i, j) => Add(i, j),
+        KN::Sub(i, j) => Sub(i, j),
+        KN::Mul(i, j) => Mul(i, j),
+        KN::Div(i, j) => Div(i, j),
+        KN::IfEq(x, y, t, f) => IfEq(x, y, Box::new(trans!(*t)), Box::new(trans!(*f))),
+        KN::IfLE(x, y, t, f) => IfLE(x, y, Box::new(trans!(*t)), Box::new(trans!(*f))),
+        KN::Let((i, t), e1, e2) => {
+            let e1 = trans!(*e1);
+            env.insert(i.clone(), t.clone());
+            let e2 = trans!(*e2);
+            env.remove(&i);
+            Let((i, t), Box::new(e1), Box::new(e2))
+        },
+        KN::Var(i) => Var(i),
+        KN::LetRec(KNFunDef{ name: (name, ty), args, body }, e) => {
+            env.insert(name.clone(), ty.clone());
+            
+            for x in args.iter() {
+                env.insert(x.0.clone(), x.1.clone());
+            }
+
+            let body = trans!(*body);
+
+            let mut a:HashSet<_> = args.iter().map(|&(ref x, _)| x.clone()).collect();
+            a.insert(Id(name.0.clone()));
+            let fv:HashSet<_> = body.free_variables().difference(&a).cloned().collect();
+            let mut fvt = HashMap::new();
+            for x in fv.iter() {
+                fvt.insert(x.clone(), env.get(x).unwrap().clone());
+            }
+
+            for &(ref x, _) in args.iter() {
+                env.remove(x);
+            }
+
+            if fvt.is_empty() {
+                known.insert(Label(name.0.clone()));
+            }
+
+            let f = Function{ entry: (Label(name.0.clone()), ty), free_variables: fvt, args: args, body: Box::new(body) };
+            decls.push(f);
+
+
+            let c = Closure {entry: Label(name.0.clone()), free_variables: fv};
+            let e = trans!(*e);
+
+            env.remove(&name);
+
+            MakeClosure(name, c, Box::new(e))
+        },
+        KN::App(Id(f), args) => {
+            let l = Label(f);
+            if known.contains(&l) {
+                AppDirect(l, args)
+            }
+            else {
+                AppClosure(Id(l.0), args)
+            }
+        },
+        KN::Tuple(t) => Tuple(t),
+        KN::LetTuple(t, i, e) => {
+            for x in t.iter() {
+                env.insert(x.0.clone(), x.1.clone());
+            }
+            let e = trans!(*e);
+            for &(ref x, _) in t.iter() {
+                env.remove(x);
+            }
+            LetTuple(t, i, Box::new(e))
+        },
+    }
+}
+
 
 
