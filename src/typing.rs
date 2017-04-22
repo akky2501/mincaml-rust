@@ -335,7 +335,7 @@ pub fn infer(expr: &mut Syntax, env: &mut TypeEnv, gsubst: &mut TypeSubst, vg: &
                 env.push_t(i.0.clone(), i.1.clone());
             }
 
-            let r = infer!(&mut *body);
+            let r = infer!(&mut *body); // TODO: body内にnameが変数として出てきたときに残る型変数への代入
             
             for _ in 0..args.len() {
                 env.pop();
@@ -357,14 +357,18 @@ pub fn infer(expr: &mut Syntax, env: &mut TypeEnv, gsubst: &mut TypeSubst, vg: &
 
             Ok(infer!(name : fun_type.generalize(env), t))
         },
-        Syntax::App(ref mut f, ref mut args) => {
+        Syntax::App(ref mut f, ref mut args, ref mut ty) => {
             let tf = infer!(f);
             let mut tya = Vec::new();
             for i in args.iter_mut() {
                 tya.push(infer!(i));
             }
-            let newvar = vg.gen_type();
+            let mut newvar = vg.gen_type();
             unify!(Type::Fun(tya, Box::new(newvar.clone())), tf);
+            //println!("App type {:?}", newvar);
+            newvar.apply(gsubst);
+            //println!("App type subst {:?}", newvar);
+            *ty = newvar.clone();
             Ok(newvar)
         },
         Syntax::Tuple(ref mut t) => {

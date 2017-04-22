@@ -1,8 +1,7 @@
-use std::collections::HashMap;
 use ast::*;
 use id::*;
 
-pub fn alpha_transform(expr: &mut Syntax, env: &mut HashMap<Id,Id>, vg: &mut VarGenerater) -> Result<(), ()> {
+pub fn alpha_transform(expr: &mut Syntax, env: &mut Vec<(Id,Id)>, vg: &mut VarGenerater) -> Result<(), ()> {
     match *expr {
         Syntax::Unit | Syntax::Bool(_) | Syntax::Int(_) => Ok(()),
         Syntax::Not(ref mut t) |
@@ -24,14 +23,14 @@ pub fn alpha_transform(expr: &mut Syntax, env: &mut HashMap<Id,Id>, vg: &mut Var
         Syntax::Let((ref mut id, _), ref mut t1, ref mut t2) => {
             alpha_transform(t1, env, vg)?;
             let new = vg.gen_id();
-            env.insert(id.clone(), new.clone());
+            env.push((id.clone(), new.clone()));
             alpha_transform(t2, env, vg)?;
-            env.remove(id);
+            let _ = env.pop();
             *id = new;
             Ok(())
         },
         Syntax::Var(ref mut id) => {
-            if let Some(new) = env.get(id) {
+            if let Some(&(_, ref new)) = env.iter().rev().find(|&&(ref old, _)| *old == *id) {
                 *id = new.clone();
                 Ok(())
             }
@@ -56,29 +55,28 @@ pub fn alpha_transform(expr: &mut Syntax, env: &mut HashMap<Id,Id>, vg: &mut Var
             }*/
 
             let new = vg.gen_id();
-            env.insert(name.clone(), new.clone());
+            env.push((name.clone(), new.clone()));
 
             let new_args: Vec<_> = args.to_vec().iter().map(|_| vg.gen_id()).collect();
 
             for i in 0..args.len() {
-                env.insert(args[i].0.clone(), new_args[i].clone());
+                env.push((args[i].0.clone(), new_args[i].clone()));
             }
 
             alpha_transform(body, env, vg)?;
 
             for i in 0..new_args.len() {
-                env.remove(&new_args[i]);
+                let _ = env.pop();
                 args[i].0 = new_args[i].clone();
             }
 
-            env.insert(name.clone(), new.clone());
             alpha_transform(t, env, vg)?;
-            env.remove(name);
+            let _ = env.pop();
             *name = new;
 
             Ok(())
         },
-        Syntax::App(ref mut f, ref mut args) => {
+        Syntax::App(ref mut f, ref mut args, _) => {
             alpha_transform(f, env, vg)?;
             for i in args.iter_mut() {
                 alpha_transform(i, env, vg)?;
@@ -106,13 +104,13 @@ pub fn alpha_transform(expr: &mut Syntax, env: &mut HashMap<Id,Id>, vg: &mut Var
 
             let new: Vec<_> = decl.to_vec().iter().map(|_| vg.gen_id()).collect();
             for i in 0..decl.len() {
-                env.insert(decl[i].0.clone(), new[i].clone());
+                env.push((decl[i].0.clone(), new[i].clone()));
             }
 
             alpha_transform(t2, env, vg)?;
 
             for i in 0..new.len() {
-                env.remove(&new[i]);
+                env.pop();
                 decl[i].0 = new[i].clone();
             }
 

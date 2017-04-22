@@ -19,7 +19,7 @@ pub enum Syntax {
     Let((Id,Type), Box<Syntax>, Box<Syntax>),
     Var(Id),
     LetRec(FunDef, Box<Syntax>),
-    App(Box<Syntax>, Box<[Syntax]>),
+    App(Box<Syntax>, Box<[Syntax]>, Type),
     Tuple(Box<[Syntax]>),
     LetTuple(Box<[(Id, Type)]>, Box<Syntax>, Box<Syntax>),
 }

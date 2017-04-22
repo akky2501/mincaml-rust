@@ -9,6 +9,7 @@ use mincaml_rust::typing::{infer,TypeSubst,TypeEnv};
 use mincaml_rust::alpha::alpha_transform;
 use mincaml_rust::knormal::{knormal_transform, flat_let};
 use mincaml_rust::closure::closure_transform;
+use mincaml_rust::codegen::code_generate;
 
 #[allow(unused_variables)]
 fn main() {
@@ -57,14 +58,81 @@ fn main() {
         let a = 1+(let x = (let y = 5+3 in y+y) in x+7) in
         id a
         ";
-    let src = b"
+    let src6 = b"
+                let rec id x = x in
                 let rec add x =
-                    let rec addx y = x + y in addx in
-                let rec inc x = 1+x in
+                    let rec addx y = x + y in id (id addx) in
+                let rec inc x = 1+ id x  in
                 let g = if true then add 10 else inc in
                 g 50
     ";
 
+    let src7 = b"
+        let g = let rec id x = x in let rec id2 x = x in if true then id else id2 in
+        g
+        ";
+
+    let src8 = b"
+        let rec id x = x in
+        let rec add x =
+            let rec f y = 
+                let rec g z = 
+                    let rec h w = x+y+z+w in id h
+                in id g
+            in id f
+        in add
+    ";
+
+    let src9 =b"
+        let rec pred x = x=x in
+        let rec f p= let rec g x y z = if p y then x else z in g in
+        let rec h x y z = if (z = 0)=y then x else x in
+        (f pred, h)
+    ";
+
+    let src = b"
+        let rec id x = x in
+        let rec id1 x y = x in
+        let rec id2 x y = y in
+        1 + (if true then id id1 else id id2) 10 20
+    ";
+
+    let src = b"
+        let rec id x = x in
+        let rec add x y z w = x+y+z+w in
+        let rec succ x = x + 1 in
+        let x = id 42 in
+        let a = id 0 in
+        let y = (add (succ a) (succ (succ a)) (succ (succ (succ a))) (succ (succ (succ (succ 0))))) in
+        let rec sum x = if x > 0 then x + sum (x - 1) else 0 in
+        let rec fib n = if n = 0 || n = 1 then n else fib (n-1) + fib (n-2) in
+        if sum y = fib 10 then 2000 else 0
+    ";
+    
+    // 関数のbody内にその関数が変数として現れる場合、同処理するのか
+    let src12 = b"
+        let rec id x = x in
+        let rec sum x = if x > 0 then x + (id sum) (x - 1) else 0 in
+        sum 5
+    ";
+
+    let src13 = b"
+        let rec mod x y = x - (x/y)*y in
+        let rec is_prime x y = if x > y then (if mod x y = 0 then 0 else is_prime x (y+1)) else 1 in
+        let rec greatest_prime n = if is_prime n 2 = 1 then n else greatest_prime (n-1) in
+        greatest_prime 70000";
+
+    let src = b"
+        let rec greatest_prime n =
+            let rec is_prime x y =
+                let rec mod x y = x - (x/y)*y in
+                if x > y then (if mod x y = 0 then 0 else is_prime x (y+1)) else 1 in
+            if is_prime n 2 = 1 then n else greatest_prime (n-1) in
+        greatest_prime 65535
+    ";
+
+
+    println!("/*");
     println!("src:\n{}",str::from_utf8(src).unwrap());
 
     println!("[[parse phase... begin]]");
@@ -73,20 +141,20 @@ fn main() {
     println!("[[parse phase... end]]\n");
 
     println!("[[alpha transform phase... begin]]");
-    alpha_transform(&mut ast, &mut HashMap::new(), &mut vg).unwrap();
+    alpha_transform(&mut ast, &mut Vec::new(), &mut vg).unwrap();
     println!("alpha transformed ast:\n{:?}",ast);
     println!("[[alpha transform phase... end]]\n");
     
     println!("[[typing phase... begin]]");
     let mut subst = TypeSubst::new();
     let mut env = TypeEnv::new();
-    let mut ty = infer(&mut ast, &mut env, &mut subst, &mut vg).unwrap();
-    println!("type: {:?}",ty);
+    let mut ret_ty = infer(&mut ast, &mut env, &mut subst, &mut vg).unwrap();
+    println!("type: {:?}",ret_ty);
     println!("env:\n{:?}",env);
     println!("subst:\n{:?}",subst);
     println!("typed ast:\n{:?}",ast);
-    ty.apply(&subst);
-    println!("substituted type: {:?}",ty);
+    ret_ty.apply(&subst);
+    println!("substituted type: {:?}",ret_ty);
     /*let rty = ty.generalize(&env);
     if rty.bind.is_empty() {
         println!("pass type check!");
@@ -110,192 +178,8 @@ fn main() {
     let p = closure_transform(k);
     println!("program:\n{:?}", p);
     println!("[[closure transform phase... end]]\n");
+
+    println!("*/\n");
+    code_generate(p, ret_ty);
 }
 
-
-/*
-
-Program { 
-    decls: [
-        Function { entry: (Label("@17"), Fun([Var(1)], Var(1))), free_variables: {}, 
-            args: [(Id("@18"), Var(1))], 
-            body: Var(Id("@18")) }, 
-
-        Function { entry: (Label("@21"), Fun([Var(3)], Var(34))), free_variables: {Id("@17"): Fun([Var(1)], Var(1)), Id("@20"): Var(34)}, 
-            args: [(Id("@22"), Var(3))], 
-            body: AppClosure(Id("@17"), [Id("@20")]) },
-
-        Function { entry: (Label("@19"), Fun([Var(34)], Fun([Var(36)], Var(34)))), free_variables: {Id("@17"): Fun([Var(1)], Var(1))}, 
-            args: [(Id("@20"), Var(34))], 
-            body: MakeClosure(Id("@21"), Closure { entry: Label("@21"), free_variables: {Id("@17"), Id("@20")} }, 
-                  Var(Id("@21"))) }, 
-
-        Function { entry: (Label("@23"), Fun([Int], Int)), free_variables: {}, 
-            args: [(Id("@24"), Int)], 
-            body: Let((Id("@48"), Int), Int(1), 
-                  Add(Id("@24"), Id("@48"))) }, 
-
-        Function { entry: (Label("@25"), Fun([Int], Int)), free_variables: {Id("@23"): Fun([Int], Int), Id("@25"): Fun([Int], Int)}, 
-            args: [(Id("@26"), Int)], 
-            body: Let((Id("@51"), Int), AppClosure(Id("@23"), [Id("@26")]), 
-                  Let((Id("@53"), Int), AppClosure(Id("@25"), [Id("@51")]), 
-                  AppClosure(Id("@23"), [Id("@53")]))) }, 
-
-        Function { entry: (Label("@31"), Fun([Int], Int)), free_variables: {Id("@30"): Int, Id("@31"): Fun([Int], Int), Id("@23"): Fun([Int], Int)}, 
-            args: [(Id("@32"), Int)], 
-            body: IfEq(Id("@32"), Id("@30"), 
-                  Var(Id("@32")), 
-                  Let((Id("@59"), Int), AppClosure(Id("@23"), [Id("@32")]), 
-                  Let((Id("@62"), Int), AppClosure(Id("@31"), [Id("@59")]), 
-                  Add(Id("@32"), Id("@62"))))) }, 
-
-        Function { entry: (Label("@29"), Fun([Int], Int)), free_variables: {Id("@23"): Fun([Int], Int), Id("@28"): Int}, 
-            args: [(Id("@30"), Int)], 
-            body: MakeClosure(Id("@31"), Closure { entry: Label("@31"), free_variables: {Id("@31"), Id("@23"), Id("@30")} }, 
-                  AppClosure(Id("@31"), [Id("@28")])) }, 
-
-        Function { entry: (Label("@27"), Fun([Int], Fun([Int], Int))), free_variables: {Id("@23"): Fun([Int], Int)}, 
-            args: [(Id("@28"), Int)], 
-            body: MakeClosure(Id("@29"), Closure { entry: Label("@29"), free_variables: {Id("@23"), Id("@28")} }, 
-                  Var(Id("@29"))) }], 
-    
-    code: MakeClosure(Id("@17"), Closure { entry: Label("@17"), free_variables: {} }, 
-          MakeClosure(Id("@19"), Closure { entry: Label("@19"), free_variables: {Id("@17")} }, 
-          MakeClosure(Id("@23"), Closure { entry: Label("@23"), free_variables: {} }, 
-          MakeClosure(Id("@25"), Closure { entry: Label("@25"), free_variables: {Id("@25"), Id("@23")} }, 
-          MakeClosure(Id("@27"), Closure { entry: Label("@27"), free_variables: {Id("@23")} }, 
-          Let((Id("@65"), Int), Int(10), 
-          Let((Id("@66"), Int), Int(0),
-          Let((Id("@68"), Fun([Int], Int)), AppClosure(Id("@27"), [Id("@66")]), 
-          Let((Id("@33"), Int), AppClosure(Id("@68"), [Id("@65")]), 
-          Var(Id("@33"))))))))))) }
-
-*/
-
-/*
-Program { 
-    decls: [
-        Function { entry: (Label("@17"), Fun([Var(1)], Var(1))), 
-            free_variables: {}, 
-            args: [(Id("@18"), Var(1))], 
-            body: Var(Id("@18")) }, 
-
-        Function { entry: (Label("@21"), Fun([Var(3)], Var(34))), 
-            free_variables: {Id("@17"): Fun([Var(1)], Var(1)), Id("@20"): Var(34)}, 
-            args: [(Id("@22"), Var(3))], 
-            body: AppClosure(Id("@17"), [Id("@20")]) }, 
-
-        Function { entry: (Label("@19"), Fun([Var(34)], Fun([Var(36)], Var(34)))), 
-            free_variables: {Id("@17"): Fun([Var(1)], Var(1))}, 
-            args: [(Id("@20"), Var(34))], 
-            body: MakeClosure(Id("@21"), Closure { entry: Label("@21"), free_variables: {Id("@17"), Id("@20")} }, 
-                  Var(Id("@21"))) },
-
-        Function { entry: (Label("@23"), Fun([Int], Int)), 
-            free_variables: {}, 
-            args: [(Id("@24"), Int)], 
-            body: Let((Id("@48"), Int), Int(1), 
-                  Add(Id("@24"), Id("@48"))) }, 
-
-        Function { entry: (Label("@25"), Fun([Int], Int)), 
-            free_variables: {Id("@23"): Fun([Int], Int)}, 
-            args: [(Id("@26"), Int)], 
-            body: Let((Id("@51"), Int), AppClosure(Id("@23"), [Id("@26")]), 
-                  Let((Id("@53"), Int), AppClosure(Id("@25"), [Id("@51")]), 
-                  AppClosure(Id("@23"), [Id("@53")]))) },
-
-        Function { entry: (Label("@31"), Fun([Int], Int)), 
-            free_variables: {Id("@30"): Int, Id("@23"): Fun([Int], Int)}, 
-            args: [(Id("@32"), Int)], 
-            body: IfEq(Id("@32"), Id("@30"), 
-                       Var(Id("@32")), 
-                       Let((Id("@59"), Int), AppClosure(Id("@23"), [Id("@32")]), 
-                       Let((Id("@62"), Int), AppClosure(Id("@31"), [Id("@59")]), 
-                       Add(Id("@32"), Id("@62"))))) }, 
-
-        Function { entry: (Label("@29"), Fun([Int], Int)), 
-            free_variables: {Id("@28"): Int, Id("@23"): Fun([Int], Int)}, 
-            args: [(Id("@30"), Int)], 
-            body: MakeClosure(Id("@31"), Closure { entry: Label("@31"), free_variables: {Id("@30"), Id("@23")} }, 
-                  AppClosure(Id("@31"), [Id("@28")])) }, 
-
-        Function { entry: (Label("@27"), Fun([Int], Fun([Int], Int))), 
-            free_variables: {Id("@23"): Fun([Int], Int)}, 
-            args: [(Id("@28"), Int)], 
-            body: MakeClosure(Id("@29"), Closure { entry: Label("@29"), free_variables: {Id("@28"), Id("@23")} }, 
-                  Var(Id("@29"))) }], 
-
-    code: 
-        MakeClosure(Id("@17"), Closure { entry: Label("@17"), free_variables: {} }, 
-        MakeClosure(Id("@19"), Closure { entry: Label("@19"), free_variables: {Id("@17")} }, 
-        MakeClosure(Id("@23"), Closure { entry: Label("@23"), free_variables: {} }, 
-        MakeClosure(Id("@25"), Closure { entry: Label("@25"), free_variables: {Id("@23")} }, 
-        MakeClosure(Id("@27"), Closure { entry: Label("@27"), free_variables: {Id("@23")} }, 
-        Let((Id("@65"), Int), Int(10), 
-        Let((Id("@66"), Int), Int(0), 
-        Let((Id("@68"), Fun([Int], Int)), AppClosure(Id("@27"), [Id("@66")]), 
-        Let((Id("@33"), Int), AppClosure(Id("@68"), [Id("@65")]), 
-        Var(Id("@33"))))))))))) 
-}
-*/
-
-/*
-Program { 
-    decls: [
-        Function { entry: (Label("addx"), Fun([Int], Int)), free_variables: {Id("x"): Int}, 
-            args: [(Id("y"), Int)], 
-            body: Add(Id("x"), Id("y")) }, 
-        
-        Function { entry: (Label("add"), Fun([Int], Fun([Int], Int))), free_variables: {}, 
-            args: [(Id("x"), Int)], 
-            body: MakeClosure(Id("addx"), Closure { entry: Label("addx"), free_variables: {Id("x")} }, 
-                  Var(Id("addx"))) }, 
-        
-        Function { entry: (Label("inc"), Fun([Int], Int)), free_variables: {}, 
-            args: [(Id("x"), Int)], 
-            body: Let((Id("@18"), Int), Int(1), 
-                  Add(Id("@18"), Id("x"))) }], 
-    
-    code: 
-        MakeClosure(Id("add"), Closure { entry: Label("add"), free_variables: {} }, 
-        MakeClosure(Id("inc"), Closure { entry: Label("inc"), free_variables: {} }, 
-        Let((Id("@20"), Bool), Bool(true), 
-        Let((Id("@21"), Bool), Bool(false), 
-        Let((Id("g"), Fun([Int], Int)), IfEq(Id("@20"), Id("@21"), 
-                                               Var(Id("inc")), 
-                                               Let((Id("@22"), Int), Int(10), 
-                                                   AppClosure(Id("add"), [Id("@22")]))), 
-        Let((Id("@24"), Int), Int(50), 
-        AppClosure(Id("g"), [Id("@24")]))))))) 
-}
-*/
-
-/*
-Program { 
-    decls: [
-        Function { entry: (Label("@9"), Fun([Int], Int)), free_variables: {Id("@8"): Int}, 
-            args: [(Id("@10"), Int)], 
-            body: Add(Id("@8"), Id("@10")) }, 
-
-        Function { entry: (Label("@7"), Fun([Int], Fun([Int], Int))), free_variables: {}, 
-            args: [(Id("@8"), Int)], 
-            body: MakeClosure(Id("@9"), Closure { entry: Label("@9"), free_variables: {Id("@8")} }, 
-                  Var(Id("@9"))) }, 
-
-        Function { entry: (Label("@11"), Fun([Int], Int)), free_variables: {}, 
-            args: [(Id("@12"), Int)], 
-            body: Let((Id("@18"), Int), Int(1), 
-                  Add(Id("@18"), Id("@12"))) }], 
-
-    code: MakeClosure(Id("@7"), Closure { entry: Label("@7"), free_variables: {} }, 
-          MakeClosure(Id("@11"), Closure { entry: Label("@11"), free_variables: {} }, 
-          Let((Id("@20"), Bool), Bool(true), 
-          Let((Id("@21"), Bool), Bool(false), 
-          Let((Id("@13"), Fun([Int], Int)), IfEq(Id("@20"), Id("@21"), 
-                                                 Var(Id("@11")), 
-                                                 Let((Id("@22"), Int), Int(10), 
-                                                     AppDirect(Label("@7"), [Id("@22")]))), 
-          Let((Id("@24"), Int), Int(50), 
-          AppClosure(Id("@13"), [Id("@24")]))))))) 
-}
-*/

@@ -252,7 +252,7 @@ impl Parser {
                 head
             }
             else {
-                Syntax::App(Box::new(head), args.into_boxed_slice())
+                Syntax::App(Box::new(head), args.into_boxed_slice(), self.vg.gen_type())
             }
         })
     ));

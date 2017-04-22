@@ -29,16 +29,16 @@ pub enum Syntax {
 
 #[derive(Debug)]
 pub struct Closure {
-    entry: Label,
-    free_variables: HashSet<Id>,
+    pub entry: Label,
+    pub free_variables: HashSet<Id>,
 }
 
 #[derive(Debug)]
 pub struct Function {
-    entry: (Label, Type),
-    free_variables: HashMap<Id, Type>,
-    args: Vec<(Id, Type)>,
-    body: Box<Syntax>,
+    pub entry: (Label, Type),
+    pub free_variables: HashMap<Id, Type>,
+    pub args: Vec<(Id, Type)>,
+    pub body: Box<Syntax>,
 }
 
 impl Syntax {
@@ -110,8 +110,8 @@ impl Syntax {
 
 #[derive(Debug)]
 pub struct Program {
-    decls: Vec<Function>,
-    code: Syntax,
+    pub decls: Vec<Function>,
+    pub code: Syntax,
 }
 
 
@@ -121,89 +121,10 @@ pub fn closure_transform(exp: KN /*, env*/) -> Program {
     let mut decls = Vec::new();
     let mut known = HashSet::new();
     let code = transform(exp, &mut env, &mut decls, &mut known);
+    println!("known set {:?}", known);
     Program { decls: decls, code: code }
 }
 
-/*
-fn transform(exp: KN, env: &mut HashMap<Id,Type>, decls: &mut Vec<Function>) -> Syntax {
-    use self::Syntax::*;
-    match exp {
-        KN::Unit => Unit,
-        KN::Bool(b) => Bool(b),
-        KN::Int(i)  => Int(i),
-        KN::Neg(i)  => Neg(i),
-        KN::Add(i, j) => Add(i, j),
-        KN::Sub(i, j) => Sub(i, j),
-        KN::Mul(i, j) => Mul(i, j),
-        KN::Div(i, j) => Div(i, j),
-        KN::IfEq(x, y, t, f) => IfEq(x, y, Box::new(transform(*t, env, decls)), Box::new(transform(*f, env, decls))),
-        KN::IfLE(x, y, t, f) => IfLE(x, y, Box::new(transform(*t, env, decls)), Box::new(transform(*f, env, decls))),
-        KN::Let((i, t), e1, e2) => {
-            let e1 = transform(*e1, env, decls);
-            env.insert(i.clone(), t.clone());
-            let e2 = transform(*e2, env, decls);
-            env.remove(&i);
-            Let((i, t), Box::new(e1), Box::new(e2))
-        },
-        KN::Var(i) => Var(i),
-        KN::LetRec(KNFunDef{ name: (Id(name), ty), args, body }, e) => {
-            env.insert(Id(name.clone()), ty.clone());
-            for x in args.iter() {
-                env.insert(x.0.clone(), x.1.clone());
-            }
-
-            println!("body before: {:?}",body);
-            let body = transform(*body, env, decls); 
-            println!("body after: {:?}",body);
-            let mut a:HashSet<_> = args.iter().map(|&(ref x, _)| x.clone()).collect();
-            a.insert(Id(name.clone()));
-            let bfv = body.free_variables();
-            let fv: HashSet<_> = bfv.difference(&a).cloned().collect();
-            /*println!("{{env: {:?}",env);
-            println!("body_fv: {:?}",bfv);
-            println!("a: {:?}",a);
-            println!("fv = bfv-a: {:?}}}",fv);*/
-            let mut fvt = HashMap::new();
-            for x in fv.iter() {
-                fvt.insert(x.clone(), env.get(x).unwrap().clone());
-            }
- 
-            for &(ref x, _) in args.iter() {
-                env.remove(x);
-            }
-           
-            let f = Function{ entry: (Label(name.clone()), ty), free_variables: fvt, args: args, body: Box::new(body) };
-            decls.push(f);
-
-
-            let c = Closure {entry: Label(name.clone()), free_variables: fv};
-            let e = transform(*e, env, decls);
-            
-            env.remove(&Id(name.clone()));
-            
-            MakeClosure(Id(name), c, Box::new(e))
-        },
-        KN::App(f, args) => {
-            AppClosure(f, args)
-            // AppDirect
-        },
-        KN::Tuple(t) => Tuple(t),
-        KN::LetTuple(t, i, e) => {
-            for x in t.iter() {
-                env.insert(x.0.clone(), x.1.clone());
-            }
-            let e = transform(*e, env, decls);
-            for &(ref x, _) in t.iter() {
-                env.remove(x);
-            }
-            LetTuple(t, i, Box::new(e))
-        },
-    }
-}
-*/
-
-
-// a little clever version
 fn transform(exp: KN, env: &mut HashMap<Id,Type>, decls: &mut Vec<Function>, known: &mut HashSet<Label>) -> Syntax {
     use self::Syntax::*;
     macro_rules! trans {
@@ -236,6 +157,8 @@ fn transform(exp: KN, env: &mut HashMap<Id,Type>, decls: &mut Vec<Function>, kno
                 env.insert(x.0.clone(), x.1.clone());
             }
 
+            known.insert(Label(name.0.clone())); // body内ではknownのはず、TODO: body内にnameが変数として現れる場合にどう処理するか
+            // min-camlでは変換をし直している？
             let body = trans!(*body);
 
             let mut a:HashSet<_> = args.iter().map(|&(ref x, _)| x.clone()).collect();
@@ -250,8 +173,8 @@ fn transform(exp: KN, env: &mut HashMap<Id,Type>, decls: &mut Vec<Function>, kno
                 env.remove(x);
             }
 
-            if fvt.is_empty() {
-                known.insert(Label(name.0.clone()));
+            if ! fvt.is_empty() { // 自由変数を含んでいたらknownから外す
+                known.remove(&Label(name.0.clone()));
             }
 
             let f = Function{ entry: (Label(name.0.clone()), ty), free_variables: fvt, args: args, body: Box::new(body) };
@@ -262,8 +185,13 @@ fn transform(exp: KN, env: &mut HashMap<Id,Type>, decls: &mut Vec<Function>, kno
             let e = trans!(*e);
 
             env.remove(&name);
-
-            MakeClosure(name, c, Box::new(e))
+            
+            if e.free_variables().contains(&name) {
+                MakeClosure(name, c, Box::new(e))
+            }
+            else {
+                e
+            }
         },
         KN::App(Id(f), args) => {
             let l = Label(f);

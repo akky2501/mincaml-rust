@@ -41,25 +41,21 @@ macro_rules! insert_let {
     }};
 }
 
-fn helper_apply(mut ret_ty:&mut Type, mut v: Vec<Id>, mut rev_t: Vec<Ast>, env: &mut HashMap<Id, Type>, vg: &mut VarGenerater) -> Syntax {
+fn helper_apply(mut v: Vec<Id>, mut rev_t: Vec<Ast>, env: &mut HashMap<Id, Type>, vg: &mut VarGenerater) -> Syntax {
     use self::Syntax::*;
     if let Some(e) = rev_t.pop() {
         let (k, ty) = knormal_transform(e, env, vg);
         let new = vg.gen_id();
-        
-        if rev_t.is_empty() {
-            if let Type::Fun(_, ret) = ty.clone() {
-                *ret_ty = *ret;
-            }
-        }
 
         insert_let!(new: ty = k in {
+            v.push(new);
             if ! rev_t.is_empty() {
-                v.push(new);
-                helper_apply(ret_ty, v, rev_t, env, vg)
+                helper_apply(v, rev_t, env, vg)
             }
             else {
-                App(new, v)
+                // v = [func, arg1, arg2 ...]
+                let f = v.remove(0);
+                App(f, v)
             }
         })
     }
@@ -226,12 +222,11 @@ pub fn knormal_transform(ast: Ast, env: &mut HashMap<Id, Type>, vg: &mut VarGene
 
             (LetRec(FunDef{name: (name, fun_type), args: t, body: Box::new(k1)}, Box::new(k2)), ty2)
         },
-        Ast::App(f, args) => {
+        Ast::App(f, args, ty) => {
             let mut a = args.into_vec();
-            a.push(*f);
             a.reverse();
-            let mut ty = Type::Unit;
-            let r = helper_apply(&mut ty, Vec::new(), a, env, vg);
+            a.push(*f);
+            let r = helper_apply(Vec::new(), a, env, vg);
             (r, ty)
         },
         Ast::Tuple(t) => {

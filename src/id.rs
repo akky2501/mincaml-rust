@@ -2,10 +2,10 @@ use std::fmt::Write;
 
 use typing::Type;
 
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash, PartialOrd, Ord)]
 pub struct Id(pub String);
 
-#[derive(Debug, Eq, PartialEq, Clone, Hash)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash, PartialOrd, Ord)]
 pub struct Label(pub String);
 
 #[derive(Debug)]
