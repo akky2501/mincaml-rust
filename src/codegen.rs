@@ -165,6 +165,7 @@ fn gen_code(c: Syntax) {
         },
         IfEq(l, r, th, el) => {
             // i64とboolに対して比較しないといけないが、演算が区別されていないためi64とboolのサイズを同じにして、ごまかしている
+            // 環境を作って判別すれば解決できる。
             println!("    if(*(long long*)({}.p) == *(long long*)({}.p)){{", to_variable_string(&l), to_variable_string(&r));
             gen_code(*th);
             println!("    }}else{{");
@@ -186,8 +187,25 @@ fn gen_code(c: Syntax) {
         Var(i) => {
             println!("    push({});", to_variable_string(&i));
         },
-        //MakeClosure(Id, Closure, Box<Syntax>) => { panic!(); },
-        //AppClosure(Id, Vec<Id>) => { panic!(); },
+        MakeClosure(id, closure, cont) => {
+            let Closure{ entry: e, free_variables: fv_set } = closure;
+            let mut fv: Vec<_> = fv_set.iter().collect();
+            fv.sort_by(|a, b| a.partial_cmp(b).unwrap());
+            print!("    struct value {} = make_closure( {}, ", to_variable_string(&id), to_func_string(&e));
+            print!("{}", fv.len());
+            for v in fv {
+                print!(", {}", to_variable_string(&v));
+            }
+            println!(");");
+            gen_code(*cont);
+        },
+        AppClosure(id, args) => {
+            println!("    for(int i=((struct closure *)({0}.p))->fv_num-1; i >= 0;i--) push(((struct closure *)({0}.p))->fv[i]);", to_variable_string(&id)); // push captured free variables
+            for arg in args.into_iter().rev() {
+                println!("    push({});", to_variable_string(&arg));
+            }
+            println!("    ((struct closure *)({}.p))->func();", to_variable_string(&id));
+        },
         AppDirect(label, args) => {
             for arg in args.into_iter().rev() {
                 println!("    push({});", to_variable_string(&arg));

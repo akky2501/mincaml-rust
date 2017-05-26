@@ -131,30 +131,42 @@ fn main() {
         greatest_prime 65535
     ";
 
+    let src = b"let rec fact n = if n = 0 then 1 else n*fact (n-1) in
+                fact 10";
+
+    let src = b"let rec f x = 
+                    let rec g y = 
+                        let rec h z = x*y+z in h 
+                    in g
+                in
+                let x = f 7 in
+                let y = x 5 in
+                y 10 + (x 7) 1";
+
 
     println!("/*");
     println!("src:\n{}",str::from_utf8(src).unwrap());
 
     println!("[[parse phase... begin]]");
     let (mut ast, mut vg) = parse(src).unwrap();
-    println!("ast:\n{:?}\n",ast);
+    println!("ast:\n{:#?}\n",ast);
     println!("[[parse phase... end]]\n");
 
     println!("[[alpha transform phase... begin]]");
     alpha_transform(&mut ast, &mut Vec::new(), &mut vg).unwrap();
-    println!("alpha transformed ast:\n{:?}",ast);
+    println!("alpha transformed ast:\n{:#?}",ast);
     println!("[[alpha transform phase... end]]\n");
     
     println!("[[typing phase... begin]]");
     let mut subst = TypeSubst::new();
     let mut env = TypeEnv::new();
     let mut ret_ty = infer(&mut ast, &mut env, &mut subst, &mut vg).unwrap();
-    println!("type: {:?}",ret_ty);
-    println!("env:\n{:?}",env);
-    println!("subst:\n{:?}",subst);
-    println!("typed ast:\n{:?}",ast);
+    println!("type: {:#?}",ret_ty);
+    println!("env:\n{:#?}",env);
+    println!("subst:\n{:#?}",subst);
+    println!("typed ast:\n{:#?}",ast);
     ret_ty.apply(&subst);
-    println!("substituted type: {:?}",ret_ty);
+    println!("substituted type: {:#?}",ret_ty);
     /*let rty = ty.generalize(&env);
     if rty.bind.is_empty() {
         println!("pass type check!");
@@ -168,15 +180,15 @@ fn main() {
 
     println!("[[knormal transform phase... begin]]");
     let (mut k, ty) = knormal_transform(ast, &mut HashMap::new(), &mut vg);
-    println!("k-normal form:\n{:?}",k);
-    println!("k-normal form type:\n{:?}",ty);
+    println!("k-normal form:\n{:#?}",k);
+    println!("k-normal form type:\n{:#?}",ty);
     k = flat_let(k);
-    println!("flatted k-normal form:\n{:?}",k);
+    println!("flatted k-normal form:\n{:#?}",k);
     println!("[[knormal transform phase... end]]\n");
     
     println!("[[closure transform phase... begin]]");
     let p = closure_transform(k);
-    println!("program:\n{:?}", p);
+    println!("program:\n{:#?}", p);
     println!("[[closure transform phase... end]]\n");
 
     println!("*/\n");

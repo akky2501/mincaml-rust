@@ -1,0 +1,151 @@
+/*
+src:
+
+        let rec succ x = x + 1 in
+        let x = 42 in
+        x + succ x + 5
+    
+[[parse phase... begin]]
+ast:
+LetRec(FunDef { name: (Id("succ"), Var(0)), args: [(Id("x"), Var(1))], body: Add(Var(Id("x")), Int(1)) }, Let((Id("x"), Var(3)), Int(42), Add(Add(Var(Id("x")), App(Var(Id("succ")), [Var(Id("x"))], Var(2))), Int(5))))
+
+[[parse phase... end]]
+
+[[alpha transform phase... begin]]
+alpha transformed ast:
+LetRec(FunDef { name: (Id("@4"), Var(0)), args: [(Id("@5"), Var(1))], body: Add(Var(Id("@5")), Int(1)) }, Let((Id("@6"), Var(3)), Int(42), Add(Add(Var(Id("@6")), App(Var(Id("@4")), [Var(Id("@6"))], Var(2))), Int(5))))
+[[alpha transform phase... end]]
+
+[[typing phase... begin]]
+type: Int
+env:
+TypeEnv { seq: [] }
+subst:
+TypeSubst { equations: [(1, Int), (0, Fun([Int], Int)), (3, Int), (7, Int)] }
+typed ast:
+LetRec(FunDef { name: (Id("@4"), Fun([Int], Int)), args: [(Id("@5"), Int)], body: Add(Var(Id("@5")), Int(1)) }, Let((Id("@6"), Int), Int(42), Add(Add(Var(Id("@6")), App(Var(Id("@4")), [Var(Id("@6"))], Int)), Int(5))))
+substituted type: Int
+[[typing phase... end]]
+
+[[knormal transform phase... begin]]
+k-normal form:
+LetRec(FunDef { name: (Id("@4"), Fun([Int], Int)), args: [(Id("@5"), Int)], body: Let((Id("@9"), Int), Int(1), Add(Id("@5"), Id("@9"))) }, Let((Id("@6"), Int), Int(42), Let((Id("@14"), Int), Let((Id("@13"), Int), App(Id("@4"), [Id("@6")]), Add(Id("@6"), Id("@13"))), Let((Id("@15"), Int), Int(5), Add(Id("@14"), Id("@15"))))))
+k-normal form type:
+Int
+flatted k-normal form:
+LetRec(FunDef { name: (Id("@4"), Fun([Int], Int)), args: [(Id("@5"), Int)], body: Let((Id("@9"), Int), Int(1), Add(Id("@5"), Id("@9"))) }, Let((Id("@6"), Int), Int(42), Let((Id("@13"), Int), App(Id("@4"), [Id("@6")]), Let((Id("@14"), Int), Add(Id("@6"), Id("@13")), Let((Id("@15"), Int), Int(5), Add(Id("@14"), Id("@15")))))))
+[[knormal transform phase... end]]
+
+[[closure transform phase... begin]]
+e = Let((Id("@6"), Int), Int(42), Let((Id("@13"), Int), AppDirect(Label("@4"), [Id("@6")]), Let((Id("@14"), Int), Add(Id("@6"), Id("@13")), Let((Id("@15"), Int), Int(5), Add(Id("@14"), Id("@15"))))))
+e.free_variables() = {}
+known set {Label("@4")}
+program:
+Program { decls: [Function { entry: (Label("@4"), Fun([Int], Int)), free_variables: {}, args: [(Id("@5"), Int)], body: Let((Id("@9"), Int), Int(1), Add(Id("@5"), Id("@9"))) }], code: Let((Id("@6"), Int), Int(42), Let((Id("@13"), Int), AppDirect(Label("@4"), [Id("@6")]), Let((Id("@14"), Int), Add(Id("@6"), Id("@13")), Let((Id("@15"), Int), Int(5), Add(Id("@14"), Id("@15")))))) }
+[[closure transform phase... end]]
+
+*/
+
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<stdarg.h>
+
+typedef void (*func_type)(void);
+typedef long long i64;
+typedef int bool;
+typedef unsigned char unit;
+
+struct value {
+    void* p;
+};
+
+struct closure {
+    func_type func;
+    i64 fv_num;
+    struct value fv[0];
+};
+
+int stack_top = -1;
+struct value stack_pool[4096];
+
+void push(struct value x){
+    stack_top++;
+    stack_pool[stack_top] = x;
+}
+
+struct value pop(void){
+    struct value r = stack_pool[stack_top];
+    stack_top--;
+    return r;
+}
+
+struct value make_unit(void){
+    struct value r;
+    r.p = malloc(sizeof(unit));
+    *(unit*)(r.p) = 0xff;
+    return r;
+}
+
+struct value make_int(i64 i){
+    struct value r;
+    r.p = malloc(sizeof(i64));
+    *(i64*)(r.p) = i;
+    return r;
+}
+
+struct value make_bool(bool b){
+    struct value r;
+    r.p = malloc(sizeof(bool));
+    *(bool*)(r.p) = b;
+    return r;
+}
+
+struct value make_closure(func_type func, i64 fv_num, ...){
+    struct value r;
+    va_list args;
+
+    r.p = malloc(sizeof(struct closure)+sizeof(struct value)*fv_num);
+    ((struct closure*)(r.p))->func = func;
+    ((struct closure*)(r.p))->fv_num = fv_num;
+
+    va_start(args,fv_num);
+    for(int i=0;i<fv_num;i++)
+        ((struct closure*)(r.p))->fv[i] = va_arg(args, struct value);
+    va_end(args);
+
+    return r;
+}
+
+
+void func4(void){
+    struct value var5 = pop(); // arg
+    push(make_int(1));
+    struct value var9 = pop();
+    push(make_int(*(i64*)(var5.p) + *(i64*)(var9.p)));
+}
+void entry_point(void){
+    push(make_int(42));
+    struct value var6 = pop();
+    push(var6);
+    func4();
+    struct value var13 = pop();
+    push(make_int(*(i64*)(var6.p) + *(i64*)(var13.p)));
+    struct value var14 = pop();
+    push(make_int(5));
+    struct value var15 = pop();
+    push(make_int(*(i64*)(var14.p) + *(i64*)(var15.p)));
+}
+
+void print_result(void){
+    struct value r = pop();
+
+
+}
+
+int main(void){
+    entry_point();
+    print_result();
+    return 0;
+}
+

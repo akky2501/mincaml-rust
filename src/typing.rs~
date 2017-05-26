@@ -1,0 +1,417 @@
+use std::collections::HashSet;
+
+use rand;
+
+use id::{Id,VarGenerater};
+use ast::*;
+
+#[derive(Debug, Clone)]
+pub enum Type {
+    Unit,
+    Bool,
+    Int,
+    Fun(Vec<Type>, Box<Type>),
+    Tuple(Vec<Type>),
+    Var(usize),
+}
+
+impl Type {
+    fn free_variables(&self) -> HashSet<usize> {
+        fn fv_impl(ty: &Type, fv: &mut HashSet<usize>){
+            match *ty {
+                Type::Unit | Type::Bool | Type::Int => (),
+                Type::Fun(ref l,ref r) => { 
+                    for ref x in l.iter() {
+                        fv_impl(x, fv);
+                    }
+                    fv_impl(r, fv);
+                },
+                Type::Tuple(ref t) => {
+                    for ref x in t.iter() {
+                        fv_impl(x, fv);
+                    }
+                },
+                Type::Var(x) => {
+                    fv.insert(x);
+                },
+            };
+        }
+
+        let mut fv = HashSet::new();
+        fv_impl(self,&mut fv);
+        fv
+    }
+
+    fn rewrite_variables(&mut self, from: usize, to: usize) {
+        match *self {
+            Type::Unit | Type::Bool | Type::Int => (),
+            Type::Fun(ref mut l, ref mut r) => {
+                    for ref mut i in l.iter_mut() {
+                        i.rewrite_variables(from,to);
+                    }
+                    r.rewrite_variables(from,to);
+            },
+            Type::Tuple(ref mut x) => {
+                for i in x.iter_mut(){
+                    i.rewrite_variables(from,to);
+                }
+            },
+            Type::Var(ref mut x) => {
+                if *x == from {
+                    *x = to;
+                }
+            },
+        }
+    }
+
+    fn subst(&mut self, var: usize, to: &Type){
+        match *self {
+            Type::Unit | Type::Bool | Type::Int => (),
+            Type::Fun(ref mut l, ref mut r) => {
+                    for ref mut i in l.iter_mut() {
+                        i.subst(var,to);
+                    }
+                    r.subst(var,to);
+            },
+            Type::Tuple(ref mut x) => {
+                for i in x.iter_mut(){
+                    i.subst(var,to);
+                }
+            },
+            Type::Var(x) => {
+                if x == var {
+                    *self = to.clone();
+                }
+            },
+        }
+
+    }
+
+    pub fn apply(&mut self, subst: &TypeSubst) {
+        for &(ref var, ref to) in subst.equations.iter() {
+            self.subst(*var, to);
+        }
+    }
+
+    pub fn generalize(&self, env: &TypeEnv) -> TypeScheme {
+        let tfv = self.free_variables();
+        let efv = env.free_variables();
+        let bind: HashSet<_> = tfv.difference(&efv).cloned().collect();
+        TypeScheme{ bind: bind, body: self.clone() }
+    }
+
+}
+
+
+#[derive(Debug,Clone)]
+pub struct TypeScheme {
+    pub bind: HashSet<usize>,
+    pub body: Type,
+}
+
+impl TypeScheme {
+    fn instantiate(&self, vg: &mut VarGenerater) -> Type {
+        let mut t = self.body.clone();
+        for from in self.bind.iter() {
+            let to = vg.gen_count();
+            t.rewrite_variables(*from, to);
+        }
+        t
+    }
+
+    fn free_variables(&self) -> HashSet<usize> {
+        let fv = self.body.free_variables();
+        fv.difference(&self.bind).cloned().collect()
+    }
+    
+    fn apply(&mut self, subst: &TypeSubst) {
+        for &(ref var, ref to) in subst.equations.iter() {
+            if ! self.bind.contains(var) {
+                self.body.subst(*var, to);
+            }
+        }
+    }
+
+}
+
+#[derive(Debug, Clone)]
+pub struct TypeEnv{
+    seq: Vec<(Id,TypeScheme)>,
+}
+
+impl TypeEnv {
+    pub fn new() -> Self {
+        TypeEnv{ seq: Vec::new() }
+    }
+
+    fn free_variables(&self) -> HashSet<usize> {
+        let mut s = HashSet::new();
+        for &(_,ref i) in &(self.seq) {
+            s = s.union(&(i.free_variables())).cloned().collect();
+        }
+        s
+    }
+
+    fn push(&mut self, id: Id, ty: TypeScheme){
+        self.seq.push((id, ty));
+    }
+
+    fn push_t(&mut self, id: Id, ty: Type) {
+        self.seq.push((id, TypeScheme{bind: HashSet::new(), body: ty}));
+    }
+
+    fn pop(&mut self) {
+        self.seq.pop();
+    }
+
+    fn contains(&self, id: &Id) -> Option<&TypeScheme> {
+        if let Some(x) = self.seq.iter().rposition(|&(ref x, _)| *x == *id) {
+            Some(&self.seq[x].1)
+        }
+        else { None }
+    }
+
+    fn apply(&mut self, subst: &TypeSubst) {
+        for x in self.seq.iter_mut() {
+            x.1.apply(subst);
+        }
+    }
+
+}
+
+
+#[derive(Debug)]
+pub struct TypeSubst {
+    equations: Vec<(usize,Type)>
+}
+
+impl TypeSubst {
+    pub fn new() -> Self {
+        TypeSubst{ equations: vec![] }
+    }
+
+    fn push(&mut self, var: usize, ty: Type) {
+        self.equations.push((var,ty));
+    }
+
+    fn append(&mut self, mut s: TypeSubst) {
+        self.equations.append(&mut s.equations);
+    }
+
+}
+
+
+fn unify(mut c: Vec<(Type, Type)>) -> Result<TypeSubst, ()> {
+    if let Some(last) = c.pop() {
+        match last {
+            (Type::Unit, Type::Unit) |
+            (Type::Int,  Type::Int)  |
+            (Type::Bool, Type::Bool) => {
+                unify(c)
+            },
+            (Type::Var(x), Type::Var(y)) if x == y => {
+                unify(c)
+            },
+            (Type::Var(x), t@_) |
+            (t@_, Type::Var(x)) => {
+                if ! t.free_variables().contains(&x) { // occur check
+                    let mut subst = TypeSubst::new();
+                    subst.push(x,t);
+                    for i in c.iter_mut() {
+                        i.0.apply(&subst); i.1.apply(&subst);
+                    }
+                    let s = unify(c)?;
+                    subst.append(s); // 型代入の合成の順序は大事!
+                    Ok(subst)
+                }
+                else { Err(()) }
+            },
+            (Type::Fun(args1, ret1), Type::Fun(args2, ret2)) => {
+                c.push((*ret1, *ret2));
+                c.push((Type::Tuple(args1), Type::Tuple(args2)));
+                unify(c)
+            },
+            (Type::Tuple(elems1), Type::Tuple(elems2)) => {
+                if elems1.len() == elems2.len() {
+                    let mut t: Vec<_> = elems1.into_iter()
+                                          .zip(elems2.into_iter()).collect();
+                    c.append(&mut t);
+                    unify(c)
+                }
+                else { Err(()) }
+            },
+            (_,_) => Err(()),
+        }
+    }
+    else {
+        Ok(TypeSubst::new())
+    }
+}
+
+// Algorithm J
+pub fn infer(expr: &mut Syntax, env: &mut TypeEnv, gsubst: &mut TypeSubst, vg: &mut VarGenerater) -> Result<Type, ()> {
+    macro_rules! unify{
+        ($e1:expr, $e2:expr) => {{
+            let mut v = vec![($e1, $e2)];
+            for x in v.iter_mut() {
+                x.0.apply(gsubst);
+                x.1.apply(gsubst);
+            }
+            let s = unify(v)?;
+            gsubst.append(s);
+        }};
+    }
+
+    macro_rules! infer{
+        ($expr:expr) => {{
+            infer($expr, env, gsubst, vg)?
+        }};
+
+        ($id:ident : $ex:expr , $expr:expr) => {{
+            let e = $ex;
+            let i = $id.clone();
+            env.push(i, e);
+            let ty = infer!($expr);
+            env.pop();
+            ty
+        }};
+    }
+    
+    match *expr {
+        Syntax::Unit    => Ok(Type::Unit),
+        Syntax::Bool(_) => Ok(Type::Bool),
+        Syntax::Int(_)  => Ok(Type::Int),
+        Syntax::Not(ref mut t) => {
+            unify!(Type::Bool, infer!(t));
+            Ok(Type::Bool)
+        },
+        Syntax::Neg(ref mut t) => {
+            unify!(Type::Int, infer!(t));
+            Ok(Type::Int)
+        },
+        Syntax::Add(ref mut t1, ref mut t2) |
+        Syntax::Sub(ref mut t1, ref mut t2) |
+        Syntax::Mul(ref mut t1, ref mut t2) |
+        Syntax::Div(ref mut t1, ref mut t2) => {
+            let r1 = infer!(t1);
+            let r2 = infer!(t2);
+            unify!(r1.clone(), r2);
+            unify!(r1, Type::Int);
+            Ok(Type::Int)
+        },
+        Syntax::Eq(ref mut t1, ref mut t2) => {
+            unify!(infer!(t1), infer!(t2));
+            Ok(Type::Bool)
+        },
+        Syntax::LE(ref mut t1, ref mut t2) => {
+            let r = infer!(t1);
+            unify!(Type::Int, r.clone());
+            unify!(r, infer!(t2));
+            Ok(Type::Bool)
+        },
+        Syntax::If(ref mut c, ref mut t, ref mut f) => {
+            let ty = infer!(c);
+            unify!(Type::Bool, ty);
+            let ty = infer!(t);
+            unify!(ty.clone(), infer!(f));
+            Ok(ty)
+        },
+        Syntax::Let((ref mut id, ref mut ty), ref mut t1, ref mut t2) => {
+            let a = infer!(t1);
+            unify!(ty.clone(), a);
+            env.apply(gsubst);
+            ty.apply(gsubst);
+            Ok(infer!(id : ty.generalize(env), t2))
+        },
+        Syntax::Var(ref id) => {
+            if let Some(tys) = env.contains(id) {
+                Ok(tys.instantiate(vg))
+            }
+            else { Err(()) }
+        },
+        Syntax::LetRec(FunDef{ name: (ref name, ref mut fun_type), ref mut args, ref mut body}, ref mut t) => {
+            env.push_t(name.clone(), fun_type.clone());
+            for i in args.iter() {
+                env.push_t(i.0.clone(), i.1.clone());
+            }
+
+            let r = infer!(&mut *body);
+            
+            for _ in 0..args.len() {
+                env.pop();
+            }
+            env.pop(); // fun.name
+
+            let a = Type::Fun(
+                args.iter().map(|&(_, ref t)| t.clone())
+                           .collect::<Vec<_>>(),
+                Box::new(r));
+            
+            unify!(fun_type.clone(), a);
+            env.apply(gsubst);
+            
+            fun_type.apply(gsubst);
+            for i in args.iter_mut() {
+                i.1.apply(gsubst);
+            }
+
+            Ok(infer!(name : fun_type.generalize(env), t))
+        },
+        Syntax::App(ref mut f, ref mut args, ref mut ty) => {
+            let tf = infer!(f);
+            let mut tya = Vec::new();
+            for i in args.iter_mut() {
+                tya.push(infer!(i));
+            }
+            let mut newvar = vg.gen_type();
+            unify!(Type::Fun(tya, Box::new(newvar.clone())), tf);
+            //println!("App type {:?}", newvar);
+            newvar.apply(gsubst);
+            //println!("App type subst {:?}", newvar);
+            *ty = newvar.clone();
+            Ok(newvar)
+        },
+        Syntax::Tuple(ref mut t) => {
+            let mut tup: Vec<Type> = Vec::new();
+            for i in t.iter_mut() {
+                tup.push(infer!(i));
+            }
+            Ok(Type::Tuple(tup))
+        },
+        Syntax::LetTuple(ref mut decl, ref mut t1, ref mut t2) => {
+            for i in decl.iter() {
+                env.push_t(i.0.clone(), i.1.clone());
+            }
+
+            let r = infer!(&mut *t1);
+            
+            for _ in 0..decl.len() {
+                env.pop();
+            }
+
+            let a = Type::Tuple(decl.iter().map(|&(_, ref t)| t.clone()).collect());
+            
+            unify!(r, a);
+            env.apply(gsubst);
+
+            for i in decl.iter_mut() {
+                let gen = {
+                    i.1.apply(gsubst);  
+                    i.1.generalize(env)
+                };
+                env.push(i.0.clone(), gen);
+            }
+
+            let r = infer!(&mut *t2);
+            
+            for _ in 0..decl.len() {
+                env.pop();
+            }
+
+            Ok(r)
+        },
+    }
+}
+
+
+
