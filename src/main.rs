@@ -134,14 +134,12 @@ fn main() {
     let src = b"let rec fact n = if n = 0 then 1 else n*fact (n-1) in
                 fact 10";
 
-    let src = b"let rec f x = 
-                    let rec g y = 
-                        let rec h z = x*y+z in h 
-                    in g
-                in
-                let x = f 7 in
-                let y = x 5 in
-                y 10 + (x 7) 1";
+    let src = b"let rec const x = let rec f y = x in f in
+                let x = (1, (2, 3), (4, 5, 6)) in
+                let (a, y, z) = x in
+                let (b, c) = y in
+                let (d, e, f) = z in
+                (const (a + b + c + d + e + f)) 42";
 
 
     println!("/*");

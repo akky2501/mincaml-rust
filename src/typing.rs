@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use rand;
+//use rand;
 
 use id::{Id,VarGenerater};
 use ast::*;

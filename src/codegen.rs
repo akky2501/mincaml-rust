@@ -26,6 +26,11 @@ struct closure {
     struct value fv[0];
 };
 
+struct tuple {
+    i64 num;
+    struct value elem[0];
+};
+
 int stack_top = -1;
 struct value stack_pool[0xffff];
 
@@ -72,6 +77,21 @@ struct value make_closure(func_type func, i64 fv_num, ...){
     va_start(args,fv_num);
     for(int i=0;i<fv_num;i++)
         ((struct closure*)(r.p))->fv[i] = va_arg(args, struct value);
+    va_end(args);
+
+    return r;
+}
+
+struct value make_tuple(i64 num, ...){
+    struct value r;
+    va_list args;
+
+    r.p = malloc(sizeof(struct tuple)+sizeof(struct value)*num);
+    ((struct tuple*)(r.p))->num = num;
+
+    va_start(args,num);
+    for(int i=0;i<num;i++)
+        ((struct tuple*)(r.p))->elem[i] = va_arg(args, struct value);
     va_end(args);
 
     return r;
@@ -212,9 +232,19 @@ fn gen_code(c: Syntax) {
             }
             println!("    {}();", to_func_string(&label));
         },
-        //Tuple(Vec<Id>) => { panic!(); },
-        //LetTuple(Vec<(Id, Type)>, Id, Box<Syntax>) => { panic!(); },
-        _ => panic!(),
+        Tuple(ids) => {
+            print!("    push(make_tuple({}", ids.len());
+            for i in ids {
+                print!(", {}", to_variable_string(&i));
+            }
+            println!("));");
+        },
+        LetTuple(ids, tup, cont) => {
+            for (i, (x, _)) in ids.into_iter().enumerate() {
+                println!("    struct value {} = ((struct tuple*)({}.p))->elem[{}];", to_variable_string(&x), to_variable_string(&tup), i);
+            }
+            gen_code(*cont);
+        },
     }
 
 }
@@ -239,123 +269,5 @@ fn to_variable_string(id: &Id) -> String {
     s.insert_str(0, "var");
     s
 }
-
-/*
-
-   global stack;
-
-   struct value {
-    void* p;
-   }
-
-   struct closure {
-    void (*func)(void);
-    struct value[0];
-   }
-   
-   void function(void) {
-    value arg1 = pop();
-    value arg2 = pop();
-    value free1 = pop();
-    value free2 = pop();
-
-    ...
-
-    push(ret);
-   }
-
-
-    let rec succ x = x + 1 in
-    let rec id x = x in
-    succ (id 2)
-
-    =>
-
-    decls:
-        succ x = 
-            let t = 1 in
-            x + t
-        
-        id x = x
-
-    code:
-        let t0 = 2 in
-        let t1 = id t0 in
-        succ t1
-
-    =>
-
-    void succ(void){
-        value x = pop();
-        value t = make_int(1);
-        value r = make_int((i64)*(x.p) + (i64)*(t.p));
-        push(r);
-    }
-
-    void id(void){
-        value x = pop();
-        push(x);
-    }
-
-    int main(void){
-        value t0 = make_int(2);
-        push(t0);
-        id();
-        value t1 = pop();
-        push(t1);
-        value ret = pop();
-
-        print(ret);
-
-        return 0;
-    }
-
-
-    let rec const x = 
-        let rec f y = x in
-    (const 10) 5
-
-    =>
-
-    decl:
-        const x = make_closure(f, {x});
-        f {x} y = x;
-    code:
-        let t1 = 10 in
-        let t2 = const t1 in
-        let t3 = 5 in
-        t2 t3
-
-    =>
-
-    void const(void){
-        value x = pop();
-        value r = make_closure(f, x);
-        push(r);
-    }
-
-    void f(void){
-        value x = pop();
-        value y = pop();
-        push(x);
-    }
-
-    int main(void){
-        value t1 = make_int(10);
-        push(t1);
-        const();
-        value t2 = pop();
-        value t3 = make_int(5);
-        push(t3);
-        push(t2.p->free);
-        (t2.p.f)();
-        value r = pop();
-
-        print(r);
-
-        return 0;
-    }
-
-*/
 
 

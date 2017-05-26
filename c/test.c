@@ -1,23 +1,21 @@
 /*
 src:
-let rec f x = 
-                    let rec g y = 
-                        let rec h z = x*y+z in h 
-                    in g
-                in
-                let x = f 7 in
-                let y = x 5 in
-                y 10 + (x 7) 1
+let rec const x = let rec f y = x in f in
+                let x = (1, (2, 3), (4, 5, 6)) in
+                let (a, y, z) = x in
+                let (b, c) = y in
+                let (d, e, f) = z in
+                (const (a + b + c + d + e + f)) 42
 [[parse phase... begin]]
 ast:
 LetRec(
     FunDef {
         name: (
             Id(
-                "f"
+                "const"
             ),
             Var(
-                4
+                2
             )
         ),
         args: [
@@ -26,7 +24,7 @@ LetRec(
                     "x"
                 ),
                 Var(
-                    5
+                    3
                 )
             )
         ],
@@ -34,10 +32,10 @@ LetRec(
             FunDef {
                 name: (
                     Id(
-                        "g"
+                        "f"
                     ),
                     Var(
-                        2
+                        0
                     )
                 ),
                 args: [
@@ -46,60 +44,19 @@ LetRec(
                             "y"
                         ),
                         Var(
-                            3
+                            1
                         )
                     )
                 ],
-                body: LetRec(
-                    FunDef {
-                        name: (
-                            Id(
-                                "h"
-                            ),
-                            Var(
-                                0
-                            )
-                        ),
-                        args: [
-                            (
-                                Id(
-                                    "z"
-                                ),
-                                Var(
-                                    1
-                                )
-                            )
-                        ],
-                        body: Add(
-                            Mul(
-                                Var(
-                                    Id(
-                                        "x"
-                                    )
-                                ),
-                                Var(
-                                    Id(
-                                        "y"
-                                    )
-                                )
-                            ),
-                            Var(
-                                Id(
-                                    "z"
-                                )
-                            )
-                        )
-                    },
-                    Var(
-                        Id(
-                            "h"
-                        )
+                body: Var(
+                    Id(
+                        "x"
                     )
                 )
             },
             Var(
                 Id(
-                    "g"
+                    "f"
                 )
             )
         )
@@ -110,87 +67,188 @@ LetRec(
                 "x"
             ),
             Var(
-                12
+                14
             )
         ),
-        App(
-            Var(
-                Id(
-                    "f"
-                )
-            ),
+        Tuple(
             [
                 Int(
-                    7
+                    1
+                ),
+                Tuple(
+                    [
+                        Int(
+                            2
+                        ),
+                        Int(
+                            3
+                        )
+                    ]
+                ),
+                Tuple(
+                    [
+                        Int(
+                            4
+                        ),
+                        Int(
+                            5
+                        ),
+                        Int(
+                            6
+                        )
+                    ]
+                )
+            ]
+        ),
+        LetTuple(
+            [
+                (
+                    Id(
+                        "a"
+                    ),
+                    Var(
+                        4
+                    )
+                ),
+                (
+                    Id(
+                        "y"
+                    ),
+                    Var(
+                        5
+                    )
+                ),
+                (
+                    Id(
+                        "z"
+                    ),
+                    Var(
+                        6
+                    )
                 )
             ],
             Var(
-                6
-            )
-        ),
-        Let(
-            (
                 Id(
-                    "y"
-                ),
-                Var(
-                    11
+                    "x"
                 )
             ),
-            App(
-                Var(
-                    Id(
-                        "x"
-                    )
-                ),
+            LetTuple(
                 [
-                    Int(
-                        5
+                    (
+                        Id(
+                            "b"
+                        ),
+                        Var(
+                            7
+                        )
+                    ),
+                    (
+                        Id(
+                            "c"
+                        ),
+                        Var(
+                            8
+                        )
                     )
                 ],
                 Var(
-                    7
-                )
-            ),
-            Add(
-                App(
-                    Var(
-                        Id(
-                            "y"
-                        )
-                    ),
+                    Id(
+                        "y"
+                    )
+                ),
+                LetTuple(
                     [
-                        Int(
-                            10
+                        (
+                            Id(
+                                "d"
+                            ),
+                            Var(
+                                9
+                            )
+                        ),
+                        (
+                            Id(
+                                "e"
+                            ),
+                            Var(
+                                10
+                            )
+                        ),
+                        (
+                            Id(
+                                "f"
+                            ),
+                            Var(
+                                11
+                            )
                         )
                     ],
                     Var(
-                        8
-                    )
-                ),
-                App(
+                        Id(
+                            "z"
+                        )
+                    ),
                     App(
-                        Var(
-                            Id(
-                                "x"
+                        App(
+                            Var(
+                                Id(
+                                    "const"
+                                )
+                            ),
+                            [
+                                Add(
+                                    Add(
+                                        Add(
+                                            Add(
+                                                Add(
+                                                    Var(
+                                                        Id(
+                                                            "a"
+                                                        )
+                                                    ),
+                                                    Var(
+                                                        Id(
+                                                            "b"
+                                                        )
+                                                    )
+                                                ),
+                                                Var(
+                                                    Id(
+                                                        "c"
+                                                    )
+                                                )
+                                            ),
+                                            Var(
+                                                Id(
+                                                    "d"
+                                                )
+                                            )
+                                        ),
+                                        Var(
+                                            Id(
+                                                "e"
+                                            )
+                                        )
+                                    ),
+                                    Var(
+                                        Id(
+                                            "f"
+                                        )
+                                    )
+                                )
+                            ],
+                            Var(
+                                12
                             )
                         ),
                         [
                             Int(
-                                7
+                                42
                             )
                         ],
                         Var(
-                            9
+                            13
                         )
-                    ),
-                    [
-                        Int(
-                            1
-                        )
-                    ],
-                    Var(
-                        10
                     )
                 )
             )
@@ -206,19 +264,19 @@ LetRec(
     FunDef {
         name: (
             Id(
-                "@13"
+                "@15"
             ),
             Var(
-                4
+                2
             )
         ),
         args: [
             (
                 Id(
-                    "@14"
+                    "@16"
                 ),
                 Var(
-                    5
+                    3
                 )
             )
         ],
@@ -226,72 +284,31 @@ LetRec(
             FunDef {
                 name: (
                     Id(
-                        "@15"
+                        "@17"
                     ),
                     Var(
-                        2
+                        0
                     )
                 ),
                 args: [
                     (
                         Id(
-                            "@16"
+                            "@18"
                         ),
                         Var(
-                            3
+                            1
                         )
                     )
                 ],
-                body: LetRec(
-                    FunDef {
-                        name: (
-                            Id(
-                                "@17"
-                            ),
-                            Var(
-                                0
-                            )
-                        ),
-                        args: [
-                            (
-                                Id(
-                                    "@18"
-                                ),
-                                Var(
-                                    1
-                                )
-                            )
-                        ],
-                        body: Add(
-                            Mul(
-                                Var(
-                                    Id(
-                                        "@14"
-                                    )
-                                ),
-                                Var(
-                                    Id(
-                                        "@16"
-                                    )
-                                )
-                            ),
-                            Var(
-                                Id(
-                                    "@18"
-                                )
-                            )
-                        )
-                    },
-                    Var(
-                        Id(
-                            "@17"
-                        )
+                body: Var(
+                    Id(
+                        "@16"
                     )
                 )
             },
             Var(
                 Id(
-                    "@15"
+                    "@17"
                 )
             )
         )
@@ -302,87 +319,188 @@ LetRec(
                 "@19"
             ),
             Var(
-                12
+                14
             )
         ),
-        App(
-            Var(
-                Id(
-                    "@13"
-                )
-            ),
+        Tuple(
             [
                 Int(
-                    7
+                    1
+                ),
+                Tuple(
+                    [
+                        Int(
+                            2
+                        ),
+                        Int(
+                            3
+                        )
+                    ]
+                ),
+                Tuple(
+                    [
+                        Int(
+                            4
+                        ),
+                        Int(
+                            5
+                        ),
+                        Int(
+                            6
+                        )
+                    ]
+                )
+            ]
+        ),
+        LetTuple(
+            [
+                (
+                    Id(
+                        "@20"
+                    ),
+                    Var(
+                        4
+                    )
+                ),
+                (
+                    Id(
+                        "@21"
+                    ),
+                    Var(
+                        5
+                    )
+                ),
+                (
+                    Id(
+                        "@22"
+                    ),
+                    Var(
+                        6
+                    )
                 )
             ],
             Var(
-                6
-            )
-        ),
-        Let(
-            (
                 Id(
-                    "@20"
-                ),
-                Var(
-                    11
+                    "@19"
                 )
             ),
-            App(
-                Var(
-                    Id(
-                        "@19"
-                    )
-                ),
+            LetTuple(
                 [
-                    Int(
-                        5
+                    (
+                        Id(
+                            "@23"
+                        ),
+                        Var(
+                            7
+                        )
+                    ),
+                    (
+                        Id(
+                            "@24"
+                        ),
+                        Var(
+                            8
+                        )
                     )
                 ],
                 Var(
-                    7
-                )
-            ),
-            Add(
-                App(
-                    Var(
-                        Id(
-                            "@20"
-                        )
-                    ),
+                    Id(
+                        "@21"
+                    )
+                ),
+                LetTuple(
                     [
-                        Int(
-                            10
+                        (
+                            Id(
+                                "@25"
+                            ),
+                            Var(
+                                9
+                            )
+                        ),
+                        (
+                            Id(
+                                "@26"
+                            ),
+                            Var(
+                                10
+                            )
+                        ),
+                        (
+                            Id(
+                                "@27"
+                            ),
+                            Var(
+                                11
+                            )
                         )
                     ],
                     Var(
-                        8
-                    )
-                ),
-                App(
+                        Id(
+                            "@22"
+                        )
+                    ),
                     App(
-                        Var(
-                            Id(
-                                "@19"
+                        App(
+                            Var(
+                                Id(
+                                    "@15"
+                                )
+                            ),
+                            [
+                                Add(
+                                    Add(
+                                        Add(
+                                            Add(
+                                                Add(
+                                                    Var(
+                                                        Id(
+                                                            "@20"
+                                                        )
+                                                    ),
+                                                    Var(
+                                                        Id(
+                                                            "@23"
+                                                        )
+                                                    )
+                                                ),
+                                                Var(
+                                                    Id(
+                                                        "@24"
+                                                    )
+                                                )
+                                            ),
+                                            Var(
+                                                Id(
+                                                    "@25"
+                                                )
+                                            )
+                                        ),
+                                        Var(
+                                            Id(
+                                                "@26"
+                                            )
+                                        )
+                                    ),
+                                    Var(
+                                        Id(
+                                            "@27"
+                                        )
+                                    )
+                                )
+                            ],
+                            Var(
+                                12
                             )
                         ),
                         [
                             Int(
-                                7
+                                42
                             )
                         ],
                         Var(
-                            9
+                            13
                         )
-                    ),
-                    [
-                        Int(
-                            1
-                        )
-                    ],
-                    Var(
-                        10
                     )
                 )
             )
@@ -401,122 +519,123 @@ subst:
 TypeSubst {
     equations: [
         (
-            5,
-            Var(
-                3
-            )
-        ),
-        (
-            3,
-            Int
-        ),
-        (
-            1,
-            Int
-        ),
-        (
             0,
             Fun(
                 [
-                    Int
+                    Var(
+                        1
+                    )
                 ],
-                Int
+                Var(
+                    3
+                )
             )
         ),
         (
             2,
             Fun(
                 [
-                    Int
+                    Var(
+                        3
+                    )
                 ],
                 Fun(
                     [
-                        Int
+                        Var(
+                            28
+                        )
                     ],
-                    Int
-                )
-            )
-        ),
-        (
-            4,
-            Fun(
-                [
-                    Int
-                ],
-                Fun(
-                    [
-                        Int
-                    ],
-                    Fun(
-                        [
-                            Int
-                        ],
-                        Int
+                    Var(
+                        3
                     )
                 )
             )
         ),
         (
-            21,
-            Fun(
+            14,
+            Tuple(
                 [
-                    Int
-                ],
-                Fun(
-                    [
-                        Int
-                    ],
-                    Int
-                )
+                    Int,
+                    Tuple(
+                        [
+                            Int,
+                            Int
+                        ]
+                    ),
+                    Tuple(
+                        [
+                            Int,
+                            Int,
+                            Int
+                        ]
+                    )
+                ]
             )
         ),
         (
-            12,
-            Fun(
+            6,
+            Tuple(
                 [
+                    Int,
+                    Int,
                     Int
-                ],
-                Fun(
-                    [
-                        Int
-                    ],
-                    Int
-                )
+                ]
             )
         ),
         (
-            22,
-            Fun(
+            5,
+            Tuple(
                 [
+                    Int,
                     Int
-                ],
-                Int
+                ]
             )
         ),
         (
-            11,
-            Fun(
-                [
-                    Int
-                ],
-                Int
-            )
-        ),
-        (
-            23,
+            4,
             Int
         ),
         (
-            24,
+            8,
+            Int
+        ),
+        (
+            7,
+            Int
+        ),
+        (
+            11,
+            Int
+        ),
+        (
+            10,
+            Int
+        ),
+        (
+            9,
+            Int
+        ),
+        (
+            29,
+            Int
+        ),
+        (
+            31,
             Fun(
                 [
-                    Int
+                    Var(
+                        30
+                    )
                 ],
                 Int
             )
         ),
         (
-            25,
+            30,
+            Int
+        ),
+        (
+            32,
             Int
         )
     ]
@@ -526,21 +645,22 @@ LetRec(
     FunDef {
         name: (
             Id(
-                "@13"
+                "@15"
             ),
             Fun(
                 [
-                    Int
+                    Var(
+                        3
+                    )
                 ],
                 Fun(
                     [
-                        Int
+                        Var(
+                            28
+                        )
                     ],
-                    Fun(
-                        [
-                            Int
-                        ],
-                        Int
+                    Var(
+                        3
                     )
                 )
             )
@@ -548,88 +668,49 @@ LetRec(
         args: [
             (
                 Id(
-                    "@14"
+                    "@16"
                 ),
-                Int
+                Var(
+                    3
+                )
             )
         ],
         body: LetRec(
             FunDef {
                 name: (
                     Id(
-                        "@15"
+                        "@17"
                     ),
                     Fun(
                         [
-                            Int
+                            Var(
+                                1
+                            )
                         ],
-                        Fun(
-                            [
-                                Int
-                            ],
-                            Int
+                        Var(
+                            3
                         )
                     )
                 ),
                 args: [
                     (
                         Id(
-                            "@16"
+                            "@18"
                         ),
-                        Int
+                        Var(
+                            1
+                        )
                     )
                 ],
-                body: LetRec(
-                    FunDef {
-                        name: (
-                            Id(
-                                "@17"
-                            ),
-                            Fun(
-                                [
-                                    Int
-                                ],
-                                Int
-                            )
-                        ),
-                        args: [
-                            (
-                                Id(
-                                    "@18"
-                                ),
-                                Int
-                            )
-                        ],
-                        body: Add(
-                            Mul(
-                                Var(
-                                    Id(
-                                        "@14"
-                                    )
-                                ),
-                                Var(
-                                    Id(
-                                        "@16"
-                                    )
-                                )
-                            ),
-                            Var(
-                                Id(
-                                    "@18"
-                                )
-                            )
-                        )
-                    },
-                    Var(
-                        Id(
-                            "@17"
-                        )
+                body: Var(
+                    Id(
+                        "@16"
                     )
                 )
             },
             Var(
                 Id(
-                    "@15"
+                    "@17"
                 )
             )
         )
@@ -639,110 +720,203 @@ LetRec(
             Id(
                 "@19"
             ),
-            Fun(
+            Tuple(
                 [
-                    Int
-                ],
-                Fun(
-                    [
-                        Int
-                    ],
-                    Int
-                )
+                    Int,
+                    Tuple(
+                        [
+                            Int,
+                            Int
+                        ]
+                    ),
+                    Tuple(
+                        [
+                            Int,
+                            Int,
+                            Int
+                        ]
+                    )
+                ]
             )
         ),
-        App(
-            Var(
-                Id(
-                    "@13"
-                )
-            ),
+        Tuple(
             [
                 Int(
-                    7
-                )
-            ],
-            Fun(
-                [
-                    Int
-                ],
-                Fun(
-                    [
-                        Int
-                    ],
-                    Int
-                )
-            )
-        ),
-        Let(
-            (
-                Id(
-                    "@20"
+                    1
                 ),
-                Fun(
-                    [
-                        Int
-                    ],
-                    Int
-                )
-            ),
-            App(
-                Var(
-                    Id(
-                        "@19"
-                    )
-                ),
-                [
-                    Int(
-                        5
-                    )
-                ],
-                Fun(
-                    [
-                        Int
-                    ],
-                    Int
-                )
-            ),
-            Add(
-                App(
-                    Var(
-                        Id(
-                            "@20"
-                        )
-                    ),
+                Tuple(
                     [
                         Int(
-                            10
+                            2
+                        ),
+                        Int(
+                            3
                         )
-                    ],
+                    ]
+                ),
+                Tuple(
+                    [
+                        Int(
+                            4
+                        ),
+                        Int(
+                            5
+                        ),
+                        Int(
+                            6
+                        )
+                    ]
+                )
+            ]
+        ),
+        LetTuple(
+            [
+                (
+                    Id(
+                        "@20"
+                    ),
                     Int
                 ),
-                App(
-                    App(
-                        Var(
+                (
+                    Id(
+                        "@21"
+                    ),
+                    Tuple(
+                        [
+                            Int,
+                            Int
+                        ]
+                    )
+                ),
+                (
+                    Id(
+                        "@22"
+                    ),
+                    Tuple(
+                        [
+                            Int,
+                            Int,
+                            Int
+                        ]
+                    )
+                )
+            ],
+            Var(
+                Id(
+                    "@19"
+                )
+            ),
+            LetTuple(
+                [
+                    (
+                        Id(
+                            "@23"
+                        ),
+                        Int
+                    ),
+                    (
+                        Id(
+                            "@24"
+                        ),
+                        Int
+                    )
+                ],
+                Var(
+                    Id(
+                        "@21"
+                    )
+                ),
+                LetTuple(
+                    [
+                        (
                             Id(
-                                "@19"
+                                "@25"
+                            ),
+                            Int
+                        ),
+                        (
+                            Id(
+                                "@26"
+                            ),
+                            Int
+                        ),
+                        (
+                            Id(
+                                "@27"
+                            ),
+                            Int
+                        )
+                    ],
+                    Var(
+                        Id(
+                            "@22"
+                        )
+                    ),
+                    App(
+                        App(
+                            Var(
+                                Id(
+                                    "@15"
+                                )
+                            ),
+                            [
+                                Add(
+                                    Add(
+                                        Add(
+                                            Add(
+                                                Add(
+                                                    Var(
+                                                        Id(
+                                                            "@20"
+                                                        )
+                                                    ),
+                                                    Var(
+                                                        Id(
+                                                            "@23"
+                                                        )
+                                                    )
+                                                ),
+                                                Var(
+                                                    Id(
+                                                        "@24"
+                                                    )
+                                                )
+                                            ),
+                                            Var(
+                                                Id(
+                                                    "@25"
+                                                )
+                                            )
+                                        ),
+                                        Var(
+                                            Id(
+                                                "@26"
+                                            )
+                                        )
+                                    ),
+                                    Var(
+                                        Id(
+                                            "@27"
+                                        )
+                                    )
+                                )
+                            ],
+                            Fun(
+                                [
+                                    Var(
+                                        30
+                                    )
+                                ],
+                                Int
                             )
                         ),
                         [
                             Int(
-                                7
+                                42
                             )
                         ],
-                        Fun(
-                            [
-                                Int
-                            ],
-                            Int
-                        )
-                    ),
-                    [
-                        Int(
-                            1
-                        )
-                    ],
-                    Int
+                        Int
+                    )
                 )
             )
         )
@@ -757,21 +931,22 @@ LetRec(
     FunDef {
         name: (
             Id(
-                "@13"
+                "@15"
             ),
             Fun(
                 [
-                    Int
+                    Var(
+                        3
+                    )
                 ],
                 Fun(
                     [
-                        Int
+                        Var(
+                            28
+                        )
                     ],
-                    Fun(
-                        [
-                            Int
-                        ],
-                        Int
+                    Var(
+                        3
                     )
                 )
             )
@@ -779,93 +954,49 @@ LetRec(
         args: [
             (
                 Id(
-                    "@14"
+                    "@16"
                 ),
-                Int
+                Var(
+                    3
+                )
             )
         ],
         body: LetRec(
             FunDef {
                 name: (
                     Id(
-                        "@15"
+                        "@17"
                     ),
                     Fun(
                         [
-                            Int
+                            Var(
+                                1
+                            )
                         ],
-                        Fun(
-                            [
-                                Int
-                            ],
-                            Int
+                        Var(
+                            3
                         )
                     )
                 ),
                 args: [
                     (
                         Id(
-                            "@16"
+                            "@18"
                         ),
-                        Int
+                        Var(
+                            1
+                        )
                     )
                 ],
-                body: LetRec(
-                    FunDef {
-                        name: (
-                            Id(
-                                "@17"
-                            ),
-                            Fun(
-                                [
-                                    Int
-                                ],
-                                Int
-                            )
-                        ),
-                        args: [
-                            (
-                                Id(
-                                    "@18"
-                                ),
-                                Int
-                            )
-                        ],
-                        body: Let(
-                            (
-                                Id(
-                                    "@28"
-                                ),
-                                Int
-                            ),
-                            Mul(
-                                Id(
-                                    "@14"
-                                ),
-                                Id(
-                                    "@16"
-                                )
-                            ),
-                            Add(
-                                Id(
-                                    "@28"
-                                ),
-                                Id(
-                                    "@18"
-                                )
-                            )
-                        )
-                    },
-                    Var(
-                        Id(
-                            "@17"
-                        )
+                body: Var(
+                    Id(
+                        "@16"
                     )
                 )
             },
             Var(
                 Id(
-                    "@15"
+                    "@17"
                 )
             )
         )
@@ -875,35 +1006,21 @@ LetRec(
             Id(
                 "@19"
             ),
-            Fun(
+            Tuple(
                 [
-                    Int
-                ],
-                Fun(
-                    [
-                        Int
-                    ],
-                    Int
-                )
-            )
-        ),
-        Let(
-            (
-                Id(
-                    "@31"
-                ),
-                Int
-            ),
-            Int(
-                7
-            ),
-            App(
-                Id(
-                    "@13"
-                ),
-                [
-                    Id(
-                        "@31"
+                    Int,
+                    Tuple(
+                        [
+                            Int,
+                            Int
+                        ]
+                    ),
+                    Tuple(
+                        [
+                            Int,
+                            Int,
+                            Int
+                        ]
                     )
                 ]
             )
@@ -911,79 +1028,219 @@ LetRec(
         Let(
             (
                 Id(
-                    "@20"
+                    "@33"
                 ),
-                Fun(
-                    [
-                        Int
-                    ],
-                    Int
-                )
+                Int
+            ),
+            Int(
+                1
             ),
             Let(
                 (
                     Id(
-                        "@33"
+                        "@36"
                     ),
-                    Int
-                ),
-                Int(
-                    5
-                ),
-                App(
-                    Id(
-                        "@19"
-                    ),
-                    [
-                        Id(
-                            "@33"
-                        )
-                    ]
-                )
-            ),
-            Let(
-                (
-                    Id(
-                        "@40"
-                    ),
-                    Int
-                ),
-                Let(
-                    (
-                        Id(
-                            "@35"
-                        ),
-                        Int
-                    ),
-                    Int(
-                        10
-                    ),
-                    App(
-                        Id(
-                            "@20"
-                        ),
+                    Tuple(
                         [
-                            Id(
-                                "@35"
-                            )
+                            Int,
+                            Int
                         ]
                     )
                 ),
                 Let(
                     (
                         Id(
-                            "@41"
+                            "@34"
                         ),
                         Int
+                    ),
+                    Int(
+                        2
                     ),
                     Let(
                         (
                             Id(
-                                "@38"
+                                "@35"
+                            ),
+                            Int
+                        ),
+                        Int(
+                            3
+                        ),
+                        Tuple(
+                            [
+                                Id(
+                                    "@34"
+                                ),
+                                Id(
+                                    "@35"
+                                )
+                            ]
+                        )
+                    )
+                ),
+                Let(
+                    (
+                        Id(
+                            "@40"
+                        ),
+                        Tuple(
+                            [
+                                Int,
+                                Int,
+                                Int
+                            ]
+                        )
+                    ),
+                    Let(
+                        (
+                            Id(
+                                "@37"
+                            ),
+                            Int
+                        ),
+                        Int(
+                            4
+                        ),
+                        Let(
+                            (
+                                Id(
+                                    "@38"
+                                ),
+                                Int
+                            ),
+                            Int(
+                                5
+                            ),
+                            Let(
+                                (
+                                    Id(
+                                        "@39"
+                                    ),
+                                    Int
+                                ),
+                                Int(
+                                    6
+                                ),
+                                Tuple(
+                                    [
+                                        Id(
+                                            "@37"
+                                        ),
+                                        Id(
+                                            "@38"
+                                        ),
+                                        Id(
+                                            "@39"
+                                        )
+                                    ]
+                                )
+                            )
+                        )
+                    ),
+                    Tuple(
+                        [
+                            Id(
+                                "@33"
+                            ),
+                            Id(
+                                "@36"
+                            ),
+                            Id(
+                                "@40"
+                            )
+                        ]
+                    )
+                )
+            )
+        ),
+        LetTuple(
+            [
+                (
+                    Id(
+                        "@20"
+                    ),
+                    Int
+                ),
+                (
+                    Id(
+                        "@21"
+                    ),
+                    Tuple(
+                        [
+                            Int,
+                            Int
+                        ]
+                    )
+                ),
+                (
+                    Id(
+                        "@22"
+                    ),
+                    Tuple(
+                        [
+                            Int,
+                            Int,
+                            Int
+                        ]
+                    )
+                )
+            ],
+            Id(
+                "@19"
+            ),
+            LetTuple(
+                [
+                    (
+                        Id(
+                            "@23"
+                        ),
+                        Int
+                    ),
+                    (
+                        Id(
+                            "@24"
+                        ),
+                        Int
+                    )
+                ],
+                Id(
+                    "@21"
+                ),
+                LetTuple(
+                    [
+                        (
+                            Id(
+                                "@25"
+                            ),
+                            Int
+                        ),
+                        (
+                            Id(
+                                "@26"
+                            ),
+                            Int
+                        ),
+                        (
+                            Id(
+                                "@27"
+                            ),
+                            Int
+                        )
+                    ],
+                    Id(
+                        "@22"
+                    ),
+                    Let(
+                        (
+                            Id(
+                                "@56"
                             ),
                             Fun(
                                 [
-                                    Int
+                                    Var(
+                                        30
+                                    )
                                 ],
                                 Int
                             )
@@ -991,20 +1248,89 @@ LetRec(
                         Let(
                             (
                                 Id(
-                                    "@37"
+                                    "@55"
                                 ),
                                 Int
                             ),
-                            Int(
-                                7
+                            Let(
+                                (
+                                    Id(
+                                        "@53"
+                                    ),
+                                    Int
+                                ),
+                                Let(
+                                    (
+                                        Id(
+                                            "@51"
+                                        ),
+                                        Int
+                                    ),
+                                    Let(
+                                        (
+                                            Id(
+                                                "@49"
+                                            ),
+                                            Int
+                                        ),
+                                        Let(
+                                            (
+                                                Id(
+                                                    "@47"
+                                                ),
+                                                Int
+                                            ),
+                                            Add(
+                                                Id(
+                                                    "@20"
+                                                ),
+                                                Id(
+                                                    "@23"
+                                                )
+                                            ),
+                                            Add(
+                                                Id(
+                                                    "@47"
+                                                ),
+                                                Id(
+                                                    "@24"
+                                                )
+                                            )
+                                        ),
+                                        Add(
+                                            Id(
+                                                "@49"
+                                            ),
+                                            Id(
+                                                "@25"
+                                            )
+                                        )
+                                    ),
+                                    Add(
+                                        Id(
+                                            "@51"
+                                        ),
+                                        Id(
+                                            "@26"
+                                        )
+                                    )
+                                ),
+                                Add(
+                                    Id(
+                                        "@53"
+                                    ),
+                                    Id(
+                                        "@27"
+                                    )
+                                )
                             ),
                             App(
                                 Id(
-                                    "@19"
+                                    "@15"
                                 ),
                                 [
                                     Id(
-                                        "@37"
+                                        "@55"
                                     )
                                 ]
                             )
@@ -1012,31 +1338,23 @@ LetRec(
                         Let(
                             (
                                 Id(
-                                    "@39"
+                                    "@57"
                                 ),
                                 Int
                             ),
                             Int(
-                                1
+                                42
                             ),
                             App(
                                 Id(
-                                    "@38"
+                                    "@56"
                                 ),
                                 [
                                     Id(
-                                        "@39"
+                                        "@57"
                                     )
                                 ]
                             )
-                        )
-                    ),
-                    Add(
-                        Id(
-                            "@40"
-                        ),
-                        Id(
-                            "@41"
                         )
                     )
                 )
@@ -1051,21 +1369,22 @@ LetRec(
     FunDef {
         name: (
             Id(
-                "@13"
+                "@15"
             ),
             Fun(
                 [
-                    Int
+                    Var(
+                        3
+                    )
                 ],
                 Fun(
                     [
-                        Int
+                        Var(
+                            28
+                        )
                     ],
-                    Fun(
-                        [
-                            Int
-                        ],
-                        Int
+                    Var(
+                        3
                     )
                 )
             )
@@ -1073,93 +1392,49 @@ LetRec(
         args: [
             (
                 Id(
-                    "@14"
+                    "@16"
                 ),
-                Int
+                Var(
+                    3
+                )
             )
         ],
         body: LetRec(
             FunDef {
                 name: (
                     Id(
-                        "@15"
+                        "@17"
                     ),
                     Fun(
                         [
-                            Int
+                            Var(
+                                1
+                            )
                         ],
-                        Fun(
-                            [
-                                Int
-                            ],
-                            Int
+                        Var(
+                            3
                         )
                     )
                 ),
                 args: [
                     (
                         Id(
-                            "@16"
+                            "@18"
                         ),
-                        Int
+                        Var(
+                            1
+                        )
                     )
                 ],
-                body: LetRec(
-                    FunDef {
-                        name: (
-                            Id(
-                                "@17"
-                            ),
-                            Fun(
-                                [
-                                    Int
-                                ],
-                                Int
-                            )
-                        ),
-                        args: [
-                            (
-                                Id(
-                                    "@18"
-                                ),
-                                Int
-                            )
-                        ],
-                        body: Let(
-                            (
-                                Id(
-                                    "@28"
-                                ),
-                                Int
-                            ),
-                            Mul(
-                                Id(
-                                    "@14"
-                                ),
-                                Id(
-                                    "@16"
-                                )
-                            ),
-                            Add(
-                                Id(
-                                    "@28"
-                                ),
-                                Id(
-                                    "@18"
-                                )
-                            )
-                        )
-                    },
-                    Var(
-                        Id(
-                            "@17"
-                        )
+                body: Var(
+                    Id(
+                        "@16"
                     )
                 )
             },
             Var(
                 Id(
-                    "@15"
+                    "@17"
                 )
             )
         )
@@ -1167,164 +1442,351 @@ LetRec(
     Let(
         (
             Id(
-                "@31"
+                "@33"
             ),
             Int
         ),
         Int(
-            7
+            1
         ),
         Let(
             (
                 Id(
-                    "@19"
+                    "@34"
                 ),
-                Fun(
-                    [
-                        Int
-                    ],
-                    Fun(
-                        [
-                            Int
-                        ],
-                        Int
-                    )
-                )
+                Int
             ),
-            App(
-                Id(
-                    "@13"
-                ),
-                [
-                    Id(
-                        "@31"
-                    )
-                ]
+            Int(
+                2
             ),
             Let(
                 (
                     Id(
-                        "@33"
+                        "@35"
                     ),
                     Int
                 ),
                 Int(
-                    5
+                    3
                 ),
                 Let(
                     (
                         Id(
-                            "@20"
+                            "@36"
                         ),
-                        Fun(
+                        Tuple(
                             [
+                                Int,
                                 Int
-                            ],
-                            Int
+                            ]
                         )
                     ),
-                    App(
-                        Id(
-                            "@19"
-                        ),
+                    Tuple(
                         [
                             Id(
-                                "@33"
+                                "@34"
+                            ),
+                            Id(
+                                "@35"
                             )
                         ]
                     ),
                     Let(
                         (
                             Id(
-                                "@35"
+                                "@37"
                             ),
                             Int
                         ),
                         Int(
-                            10
+                            4
                         ),
                         Let(
                             (
                                 Id(
-                                    "@40"
+                                    "@38"
                                 ),
                                 Int
                             ),
-                            App(
-                                Id(
-                                    "@20"
-                                ),
-                                [
-                                    Id(
-                                        "@35"
-                                    )
-                                ]
+                            Int(
+                                5
                             ),
                             Let(
                                 (
                                     Id(
-                                        "@37"
+                                        "@39"
                                     ),
                                     Int
                                 ),
                                 Int(
-                                    7
+                                    6
                                 ),
                                 Let(
                                     (
                                         Id(
-                                            "@38"
+                                            "@40"
                                         ),
-                                        Fun(
+                                        Tuple(
                                             [
+                                                Int,
+                                                Int,
                                                 Int
-                                            ],
-                                            Int
+                                            ]
                                         )
                                     ),
-                                    App(
-                                        Id(
-                                            "@19"
-                                        ),
+                                    Tuple(
                                         [
                                             Id(
                                                 "@37"
+                                            ),
+                                            Id(
+                                                "@38"
+                                            ),
+                                            Id(
+                                                "@39"
                                             )
                                         ]
                                     ),
                                     Let(
                                         (
                                             Id(
-                                                "@39"
+                                                "@19"
                                             ),
-                                            Int
-                                        ),
-                                        Int(
-                                            1
-                                        ),
-                                        Let(
-                                            (
-                                                Id(
-                                                    "@41"
-                                                ),
-                                                Int
-                                            ),
-                                            App(
-                                                Id(
-                                                    "@38"
-                                                ),
+                                            Tuple(
                                                 [
-                                                    Id(
-                                                        "@39"
+                                                    Int,
+                                                    Tuple(
+                                                        [
+                                                            Int,
+                                                            Int
+                                                        ]
+                                                    ),
+                                                    Tuple(
+                                                        [
+                                                            Int,
+                                                            Int,
+                                                            Int
+                                                        ]
                                                     )
                                                 ]
-                                            ),
-                                            Add(
+                                            )
+                                        ),
+                                        Tuple(
+                                            [
                                                 Id(
-                                                    "@40"
+                                                    "@33"
                                                 ),
                                                 Id(
-                                                    "@41"
+                                                    "@36"
+                                                ),
+                                                Id(
+                                                    "@40"
+                                                )
+                                            ]
+                                        ),
+                                        LetTuple(
+                                            [
+                                                (
+                                                    Id(
+                                                        "@20"
+                                                    ),
+                                                    Int
+                                                ),
+                                                (
+                                                    Id(
+                                                        "@21"
+                                                    ),
+                                                    Tuple(
+                                                        [
+                                                            Int,
+                                                            Int
+                                                        ]
+                                                    )
+                                                ),
+                                                (
+                                                    Id(
+                                                        "@22"
+                                                    ),
+                                                    Tuple(
+                                                        [
+                                                            Int,
+                                                            Int,
+                                                            Int
+                                                        ]
+                                                    )
+                                                )
+                                            ],
+                                            Id(
+                                                "@19"
+                                            ),
+                                            LetTuple(
+                                                [
+                                                    (
+                                                        Id(
+                                                            "@23"
+                                                        ),
+                                                        Int
+                                                    ),
+                                                    (
+                                                        Id(
+                                                            "@24"
+                                                        ),
+                                                        Int
+                                                    )
+                                                ],
+                                                Id(
+                                                    "@21"
+                                                ),
+                                                LetTuple(
+                                                    [
+                                                        (
+                                                            Id(
+                                                                "@25"
+                                                            ),
+                                                            Int
+                                                        ),
+                                                        (
+                                                            Id(
+                                                                "@26"
+                                                            ),
+                                                            Int
+                                                        ),
+                                                        (
+                                                            Id(
+                                                                "@27"
+                                                            ),
+                                                            Int
+                                                        )
+                                                    ],
+                                                    Id(
+                                                        "@22"
+                                                    ),
+                                                    Let(
+                                                        (
+                                                            Id(
+                                                                "@47"
+                                                            ),
+                                                            Int
+                                                        ),
+                                                        Add(
+                                                            Id(
+                                                                "@20"
+                                                            ),
+                                                            Id(
+                                                                "@23"
+                                                            )
+                                                        ),
+                                                        Let(
+                                                            (
+                                                                Id(
+                                                                    "@49"
+                                                                ),
+                                                                Int
+                                                            ),
+                                                            Add(
+                                                                Id(
+                                                                    "@47"
+                                                                ),
+                                                                Id(
+                                                                    "@24"
+                                                                )
+                                                            ),
+                                                            Let(
+                                                                (
+                                                                    Id(
+                                                                        "@51"
+                                                                    ),
+                                                                    Int
+                                                                ),
+                                                                Add(
+                                                                    Id(
+                                                                        "@49"
+                                                                    ),
+                                                                    Id(
+                                                                        "@25"
+                                                                    )
+                                                                ),
+                                                                Let(
+                                                                    (
+                                                                        Id(
+                                                                            "@53"
+                                                                        ),
+                                                                        Int
+                                                                    ),
+                                                                    Add(
+                                                                        Id(
+                                                                            "@51"
+                                                                        ),
+                                                                        Id(
+                                                                            "@26"
+                                                                        )
+                                                                    ),
+                                                                    Let(
+                                                                        (
+                                                                            Id(
+                                                                                "@55"
+                                                                            ),
+                                                                            Int
+                                                                        ),
+                                                                        Add(
+                                                                            Id(
+                                                                                "@53"
+                                                                            ),
+                                                                            Id(
+                                                                                "@27"
+                                                                            )
+                                                                        ),
+                                                                        Let(
+                                                                            (
+                                                                                Id(
+                                                                                    "@56"
+                                                                                ),
+                                                                                Fun(
+                                                                                    [
+                                                                                        Var(
+                                                                                            30
+                                                                                        )
+                                                                                    ],
+                                                                                    Int
+                                                                                )
+                                                                            ),
+                                                                            App(
+                                                                                Id(
+                                                                                    "@15"
+                                                                                ),
+                                                                                [
+                                                                                    Id(
+                                                                                        "@55"
+                                                                                    )
+                                                                                ]
+                                                                            ),
+                                                                            Let(
+                                                                                (
+                                                                                    Id(
+                                                                                        "@57"
+                                                                                    ),
+                                                                                    Int
+                                                                                ),
+                                                                                Int(
+                                                                                    42
+                                                                                ),
+                                                                                App(
+                                                                                    Id(
+                                                                                        "@56"
+                                                                                    ),
+                                                                                    [
+                                                                                        Id(
+                                                                                            "@57"
+                                                                                        )
+                                                                                    ]
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
                                                 )
                                             )
                                         )
@@ -1341,7 +1803,7 @@ LetRec(
 [[knormal transform phase... end]]
 
 [[closure transform phase... begin]]
-known set {Label("@13")}
+known set {Label("@15")}
 program:
 Program {
     decls: [
@@ -1352,49 +1814,35 @@ Program {
                 ),
                 Fun(
                     [
-                        Int
+                        Var(
+                            1
+                        )
                     ],
-                    Int
+                    Var(
+                        3
+                    )
                 )
             ),
             free_variables: {
                 Id(
-                    "@14"
-                ): Int,
-                Id(
                     "@16"
-                ): Int
+                ): Var(
+                    3
+                )
             },
             args: [
                 (
                     Id(
                         "@18"
                     ),
-                    Int
+                    Var(
+                        1
+                    )
                 )
             ],
-            body: Let(
-                (
-                    Id(
-                        "@28"
-                    ),
-                    Int
-                ),
-                Mul(
-                    Id(
-                        "@14"
-                    ),
-                    Id(
-                        "@16"
-                    )
-                ),
-                Add(
-                    Id(
-                        "@28"
-                    ),
-                    Id(
-                        "@18"
-                    )
+            body: Var(
+                Id(
+                    "@16"
                 )
             )
         },
@@ -1405,27 +1853,31 @@ Program {
                 ),
                 Fun(
                     [
-                        Int
+                        Var(
+                            3
+                        )
                     ],
                     Fun(
                         [
-                            Int
+                            Var(
+                                28
+                            )
                         ],
-                        Int
+                        Var(
+                            3
+                        )
                     )
                 )
             ),
-            free_variables: {
-                Id(
-                    "@14"
-                ): Int
-            },
+            free_variables: {},
             args: [
                 (
                     Id(
                         "@16"
                     ),
-                    Int
+                    Var(
+                        3
+                    )
                 )
             ],
             body: MakeClosure(
@@ -1439,9 +1891,6 @@ Program {
                     free_variables: {
                         Id(
                             "@16"
-                        ),
-                        Id(
-                            "@14"
                         )
                     }
                 },
@@ -1451,221 +1900,356 @@ Program {
                     )
                 )
             )
-        },
-        Function {
-            entry: (
-                Label(
-                    "@13"
-                ),
-                Fun(
-                    [
-                        Int
-                    ],
-                    Fun(
-                        [
-                            Int
-                        ],
-                        Fun(
-                            [
-                                Int
-                            ],
-                            Int
-                        )
-                    )
-                )
-            ),
-            free_variables: {},
-            args: [
-                (
-                    Id(
-                        "@14"
-                    ),
-                    Int
-                )
-            ],
-            body: MakeClosure(
-                Id(
-                    "@15"
-                ),
-                Closure {
-                    entry: Label(
-                        "@15"
-                    ),
-                    free_variables: {
-                        Id(
-                            "@14"
-                        )
-                    }
-                },
-                Var(
-                    Id(
-                        "@15"
-                    )
-                )
-            )
         }
     ],
     code: Let(
         (
             Id(
-                "@31"
+                "@33"
             ),
             Int
         ),
         Int(
-            7
+            1
         ),
         Let(
             (
                 Id(
-                    "@19"
+                    "@34"
                 ),
-                Fun(
-                    [
-                        Int
-                    ],
-                    Fun(
-                        [
-                            Int
-                        ],
-                        Int
-                    )
-                )
+                Int
             ),
-            AppDirect(
-                Label(
-                    "@13"
-                ),
-                [
-                    Id(
-                        "@31"
-                    )
-                ]
+            Int(
+                2
             ),
             Let(
                 (
                     Id(
-                        "@33"
+                        "@35"
                     ),
                     Int
                 ),
                 Int(
-                    5
+                    3
                 ),
                 Let(
                     (
                         Id(
-                            "@20"
+                            "@36"
                         ),
-                        Fun(
+                        Tuple(
                             [
+                                Int,
                                 Int
-                            ],
-                            Int
+                            ]
                         )
                     ),
-                    AppClosure(
-                        Id(
-                            "@19"
-                        ),
+                    Tuple(
                         [
                             Id(
-                                "@33"
+                                "@34"
+                            ),
+                            Id(
+                                "@35"
                             )
                         ]
                     ),
                     Let(
                         (
                             Id(
-                                "@35"
+                                "@37"
                             ),
                             Int
                         ),
                         Int(
-                            10
+                            4
                         ),
                         Let(
                             (
                                 Id(
-                                    "@40"
+                                    "@38"
                                 ),
                                 Int
                             ),
-                            AppClosure(
-                                Id(
-                                    "@20"
-                                ),
-                                [
-                                    Id(
-                                        "@35"
-                                    )
-                                ]
+                            Int(
+                                5
                             ),
                             Let(
                                 (
                                     Id(
-                                        "@37"
+                                        "@39"
                                     ),
                                     Int
                                 ),
                                 Int(
-                                    7
+                                    6
                                 ),
                                 Let(
                                     (
                                         Id(
-                                            "@38"
+                                            "@40"
                                         ),
-                                        Fun(
+                                        Tuple(
                                             [
+                                                Int,
+                                                Int,
                                                 Int
-                                            ],
-                                            Int
+                                            ]
                                         )
                                     ),
-                                    AppClosure(
-                                        Id(
-                                            "@19"
-                                        ),
+                                    Tuple(
                                         [
                                             Id(
                                                 "@37"
+                                            ),
+                                            Id(
+                                                "@38"
+                                            ),
+                                            Id(
+                                                "@39"
                                             )
                                         ]
                                     ),
                                     Let(
                                         (
                                             Id(
-                                                "@39"
+                                                "@19"
                                             ),
-                                            Int
-                                        ),
-                                        Int(
-                                            1
-                                        ),
-                                        Let(
-                                            (
-                                                Id(
-                                                    "@41"
-                                                ),
-                                                Int
-                                            ),
-                                            AppClosure(
-                                                Id(
-                                                    "@38"
-                                                ),
+                                            Tuple(
                                                 [
-                                                    Id(
-                                                        "@39"
+                                                    Int,
+                                                    Tuple(
+                                                        [
+                                                            Int,
+                                                            Int
+                                                        ]
+                                                    ),
+                                                    Tuple(
+                                                        [
+                                                            Int,
+                                                            Int,
+                                                            Int
+                                                        ]
                                                     )
                                                 ]
-                                            ),
-                                            Add(
+                                            )
+                                        ),
+                                        Tuple(
+                                            [
                                                 Id(
-                                                    "@40"
+                                                    "@33"
                                                 ),
                                                 Id(
-                                                    "@41"
+                                                    "@36"
+                                                ),
+                                                Id(
+                                                    "@40"
+                                                )
+                                            ]
+                                        ),
+                                        LetTuple(
+                                            [
+                                                (
+                                                    Id(
+                                                        "@20"
+                                                    ),
+                                                    Int
+                                                ),
+                                                (
+                                                    Id(
+                                                        "@21"
+                                                    ),
+                                                    Tuple(
+                                                        [
+                                                            Int,
+                                                            Int
+                                                        ]
+                                                    )
+                                                ),
+                                                (
+                                                    Id(
+                                                        "@22"
+                                                    ),
+                                                    Tuple(
+                                                        [
+                                                            Int,
+                                                            Int,
+                                                            Int
+                                                        ]
+                                                    )
+                                                )
+                                            ],
+                                            Id(
+                                                "@19"
+                                            ),
+                                            LetTuple(
+                                                [
+                                                    (
+                                                        Id(
+                                                            "@23"
+                                                        ),
+                                                        Int
+                                                    ),
+                                                    (
+                                                        Id(
+                                                            "@24"
+                                                        ),
+                                                        Int
+                                                    )
+                                                ],
+                                                Id(
+                                                    "@21"
+                                                ),
+                                                LetTuple(
+                                                    [
+                                                        (
+                                                            Id(
+                                                                "@25"
+                                                            ),
+                                                            Int
+                                                        ),
+                                                        (
+                                                            Id(
+                                                                "@26"
+                                                            ),
+                                                            Int
+                                                        ),
+                                                        (
+                                                            Id(
+                                                                "@27"
+                                                            ),
+                                                            Int
+                                                        )
+                                                    ],
+                                                    Id(
+                                                        "@22"
+                                                    ),
+                                                    Let(
+                                                        (
+                                                            Id(
+                                                                "@47"
+                                                            ),
+                                                            Int
+                                                        ),
+                                                        Add(
+                                                            Id(
+                                                                "@20"
+                                                            ),
+                                                            Id(
+                                                                "@23"
+                                                            )
+                                                        ),
+                                                        Let(
+                                                            (
+                                                                Id(
+                                                                    "@49"
+                                                                ),
+                                                                Int
+                                                            ),
+                                                            Add(
+                                                                Id(
+                                                                    "@47"
+                                                                ),
+                                                                Id(
+                                                                    "@24"
+                                                                )
+                                                            ),
+                                                            Let(
+                                                                (
+                                                                    Id(
+                                                                        "@51"
+                                                                    ),
+                                                                    Int
+                                                                ),
+                                                                Add(
+                                                                    Id(
+                                                                        "@49"
+                                                                    ),
+                                                                    Id(
+                                                                        "@25"
+                                                                    )
+                                                                ),
+                                                                Let(
+                                                                    (
+                                                                        Id(
+                                                                            "@53"
+                                                                        ),
+                                                                        Int
+                                                                    ),
+                                                                    Add(
+                                                                        Id(
+                                                                            "@51"
+                                                                        ),
+                                                                        Id(
+                                                                            "@26"
+                                                                        )
+                                                                    ),
+                                                                    Let(
+                                                                        (
+                                                                            Id(
+                                                                                "@55"
+                                                                            ),
+                                                                            Int
+                                                                        ),
+                                                                        Add(
+                                                                            Id(
+                                                                                "@53"
+                                                                            ),
+                                                                            Id(
+                                                                                "@27"
+                                                                            )
+                                                                        ),
+                                                                        Let(
+                                                                            (
+                                                                                Id(
+                                                                                    "@56"
+                                                                                ),
+                                                                                Fun(
+                                                                                    [
+                                                                                        Var(
+                                                                                            30
+                                                                                        )
+                                                                                    ],
+                                                                                    Int
+                                                                                )
+                                                                            ),
+                                                                            AppDirect(
+                                                                                Label(
+                                                                                    "@15"
+                                                                                ),
+                                                                                [
+                                                                                    Id(
+                                                                                        "@55"
+                                                                                    )
+                                                                                ]
+                                                                            ),
+                                                                            Let(
+                                                                                (
+                                                                                    Id(
+                                                                                        "@57"
+                                                                                    ),
+                                                                                    Int
+                                                                                ),
+                                                                                Int(
+                                                                                    42
+                                                                                ),
+                                                                                AppClosure(
+                                                                                    Id(
+                                                                                        "@56"
+                                                                                    ),
+                                                                                    [
+                                                                                        Id(
+                                                                                            "@57"
+                                                                                        )
+                                                                                    ]
+                                                                                )
+                                                                            )
+                                                                        )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
                                                 )
                                             )
                                         )
@@ -1701,6 +2285,11 @@ struct closure {
     func_type func;
     i64 fv_num;
     struct value fv[0];
+};
+
+struct tuple {
+    i64 num;
+    struct value elem[0];
 };
 
 int stack_top = -1;
@@ -1754,57 +2343,77 @@ struct value make_closure(func_type func, i64 fv_num, ...){
     return r;
 }
 
+struct value make_tuple(i64 num, ...){
+    struct value r;
+    va_list args;
+
+    r.p = malloc(sizeof(struct tuple)+sizeof(struct value)*num);
+    ((struct tuple*)(r.p))->num = num;
+
+    va_start(args,num);
+    for(int i=0;i<num;i++)
+        ((struct tuple*)(r.p))->elem[i] = va_arg(args, struct value);
+    va_end(args);
+
+    return r;
+}
+
 
 void func17(void){
     struct value var18 = pop(); // arg
-    struct value var14 = pop(); // fv
     struct value var16 = pop(); // fv
-    push(make_int(*(i64*)(var14.p) * *(i64*)(var16.p)));
-    struct value var28 = pop();
-    push(make_int(*(i64*)(var28.p) + *(i64*)(var18.p)));
+    push(var16);
 }
 void func15(void){
     struct value var16 = pop(); // arg
-    struct value var14 = pop(); // fv
-    struct value var17 = make_closure( func17, 2, var14, var16);
+    struct value var17 = make_closure( func17, 1, var16);
     push(var17);
 }
-void func13(void){
-    struct value var14 = pop(); // arg
-    struct value var15 = make_closure( func15, 1, var14);
-    push(var15);
-}
 void entry_point(void){
-    push(make_int(7));
-    struct value var31 = pop();
-    push(var31);
-    func13();
-    struct value var19 = pop();
-    push(make_int(5));
-    struct value var33 = pop();
-    for(int i=((struct closure *)(var19.p))->fv_num-1; i >= 0;i--) push(((struct closure *)(var19.p))->fv[i]);
-    push(var33);
-    ((struct closure *)(var19.p))->func();
-    struct value var20 = pop();
-    push(make_int(10));
-    struct value var35 = pop();
-    for(int i=((struct closure *)(var20.p))->fv_num-1; i >= 0;i--) push(((struct closure *)(var20.p))->fv[i]);
-    push(var35);
-    ((struct closure *)(var20.p))->func();
-    struct value var40 = pop();
-    push(make_int(7));
-    struct value var37 = pop();
-    for(int i=((struct closure *)(var19.p))->fv_num-1; i >= 0;i--) push(((struct closure *)(var19.p))->fv[i]);
-    push(var37);
-    ((struct closure *)(var19.p))->func();
-    struct value var38 = pop();
     push(make_int(1));
+    struct value var33 = pop();
+    push(make_int(2));
+    struct value var34 = pop();
+    push(make_int(3));
+    struct value var35 = pop();
+    push(make_tuple(2, var34, var35));
+    struct value var36 = pop();
+    push(make_int(4));
+    struct value var37 = pop();
+    push(make_int(5));
+    struct value var38 = pop();
+    push(make_int(6));
     struct value var39 = pop();
-    for(int i=((struct closure *)(var38.p))->fv_num-1; i >= 0;i--) push(((struct closure *)(var38.p))->fv[i]);
-    push(var39);
-    ((struct closure *)(var38.p))->func();
-    struct value var41 = pop();
-    push(make_int(*(i64*)(var40.p) + *(i64*)(var41.p)));
+    push(make_tuple(3, var37, var38, var39));
+    struct value var40 = pop();
+    push(make_tuple(3, var33, var36, var40));
+    struct value var19 = pop();
+    struct value var20 = ((struct tuple*)(var19.p))->elem[0];
+    struct value var21 = ((struct tuple*)(var19.p))->elem[1];
+    struct value var22 = ((struct tuple*)(var19.p))->elem[2];
+    struct value var23 = ((struct tuple*)(var21.p))->elem[0];
+    struct value var24 = ((struct tuple*)(var21.p))->elem[1];
+    struct value var25 = ((struct tuple*)(var22.p))->elem[0];
+    struct value var26 = ((struct tuple*)(var22.p))->elem[1];
+    struct value var27 = ((struct tuple*)(var22.p))->elem[2];
+    push(make_int(*(i64*)(var20.p) + *(i64*)(var23.p)));
+    struct value var47 = pop();
+    push(make_int(*(i64*)(var47.p) + *(i64*)(var24.p)));
+    struct value var49 = pop();
+    push(make_int(*(i64*)(var49.p) + *(i64*)(var25.p)));
+    struct value var51 = pop();
+    push(make_int(*(i64*)(var51.p) + *(i64*)(var26.p)));
+    struct value var53 = pop();
+    push(make_int(*(i64*)(var53.p) + *(i64*)(var27.p)));
+    struct value var55 = pop();
+    push(var55);
+    func15();
+    struct value var56 = pop();
+    push(make_int(42));
+    struct value var57 = pop();
+    for(int i=((struct closure *)(var56.p))->fv_num-1; i >= 0;i--) push(((struct closure *)(var56.p))->fv[i]);
+    push(var57);
+    ((struct closure *)(var56.p))->func();
 }
 
 void print_result(void){
