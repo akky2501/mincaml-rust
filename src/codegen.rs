@@ -11,6 +11,8 @@ r"
 #include<stdlib.h>
 #include<stdarg.h>
 
+#define alloc_heap malloc
+
 typedef void (*func_type)(void);
 typedef long long i64;
 typedef long long bool;
@@ -47,21 +49,21 @@ struct value pop(void){
 
 struct value make_unit(void){
     struct value r;
-    r.p = malloc(sizeof(unit));
+    r.p = alloc_heap(sizeof(unit));
     *(unit*)(r.p) = 0xff;
     return r;
 }
 
 struct value make_int(i64 i){
     struct value r;
-    r.p = malloc(sizeof(i64));
+    r.p = alloc_heap(sizeof(i64));
     *(i64*)(r.p) = i;
     return r;
 }
 
 struct value make_bool(bool b){
     struct value r;
-    r.p = malloc(sizeof(bool));
+    r.p = alloc_heap(sizeof(bool));
     *(bool*)(r.p) = b;
     return r;
 }
@@ -70,7 +72,7 @@ struct value make_closure(func_type func, i64 fv_num, ...){
     struct value r;
     va_list args;
 
-    r.p = malloc(sizeof(struct closure)+sizeof(struct value)*fv_num);
+    r.p = alloc_heap(sizeof(struct closure)+sizeof(struct value)*fv_num);
     ((struct closure*)(r.p))->func = func;
     ((struct closure*)(r.p))->fv_num = fv_num;
 
@@ -86,7 +88,7 @@ struct value make_tuple(i64 num, ...){
     struct value r;
     va_list args;
 
-    r.p = malloc(sizeof(struct tuple)+sizeof(struct value)*num);
+    r.p = alloc_heap(sizeof(struct tuple)+sizeof(struct value)*num);
     ((struct tuple*)(r.p))->num = num;
 
     va_start(args,num);
